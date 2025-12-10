@@ -1,0 +1,245 @@
+Hello AI,
+
+Your task is to generate the code for a Flutter application that communicates with an existing Django REST Framework backend. This initial version will focus on user authentication and profile management. Please follow this guide carefully to understand the backend API, its endpoints, and the overall workflow.
+
+---
+
+### **1. Base URL**
+
+The backend is running locally. Use the appropriate Base URL depending on your testing environment:
+-   **Android Emulator:** `http://10.0.2.2:8000/api/`
+-   **iOS Simulator or Web/Desktop:** `http://127.0.0.1:8000/api/`
+
+All endpoint paths below should be appended to this base URL.
+
+---
+
+### **2. Authentication Flow (JWT)**
+
+The backend uses JSON Web Tokens (JWT) for authentication.
+
+1.  **Login:** A successful login to `POST /auth/login/` will return an `access` token and a `refresh` token.
+2.  **Storing Tokens:** These tokens must be stored securely on the device (e.g., using `flutter_secure_storage`).
+3.  **Authenticated Requests:** For endpoints that require authentication, you must include the `access` token in the `Authorization` header with the "Bearer" scheme.
+    -   **Header:** `Authorization: Bearer <your_access_token>`
+4.  **Token Refresh:** The `access` token will expire. When you receive a `401 Unauthorized` response, you must use the `refresh` token to get a new `access` token by making a request to `POST /auth/refresh/`.
+    -   If the refresh token is also expired, the user must be logged out and prompted to sign in again.
+
+---
+
+### **3. Endpoint Definitions**
+
+Here is a detailed breakdown of every available endpoint.
+
+#### **Endpoint: `POST /auth/register/`**
+-   **Purpose:** Registers a new, inactive user.
+-   **Authentication:** Public.
+-   **Request Body (JSON):**
+    ```json
+    {
+        "email": "user@example.com",
+        "password": "A_Strong_Password123",
+        "first_name": "Test",
+        "last_name": "User",
+        "mobile": "+1234567890"
+    }
+    ```
+-   **Success Response (201 CREATED):**
+    ```json
+    {
+        "message": "User registered successfully. Please verify your email.",
+        "email": "user@example.com"
+    }
+    ```
+-   **Error Response (400 BAD REQUEST):** If data is invalid (e.g., weak password, duplicate email).
+    ```json
+    {
+        "email": ["user with this email already exists."],
+        "password": ["This password is too common."]
+    }
+    ```
+
+#### **Endpoint: `POST /auth/verify/`**
+-   **Purpose:** Verifies a user's account using the OTP sent via email.
+-   **Authentication:** Public.
+-   **Request Body (JSON):**
+    ```json
+    {
+        "email": "user@example.com",
+        "otp_code": "123456" 
+    }
+    ```
+-   **Success Response (200 OK):**
+    ```json
+    {
+        "message": "Account verified successfully."
+    }
+    ```
+-   **Error Response (400 BAD REQUEST):** If OTP is incorrect, expired, or the user doesn't exist.
+    ```json
+    {
+        "detail": "Invalid OTP."
+    }
+    ```
+
+#### **Endpoint: `POST /auth/login/`**
+-   **Purpose:** Authenticates a user and returns JWT tokens.
+-   **Authentication:** Public.
+-   **Request Body (JSON):**
+    ```json
+    {
+        "email": "user@example.com",
+        "password": "A_Strong_Password123"
+    }
+    ```
+-   **Success Response (200 OK):**
+    ```json
+    {
+        "refresh": "<refresh_token>",
+        "access": "<access_token>"
+    }
+    ```
+-   **Error Response (401 UNAUTHORIZED):** If credentials are wrong or the account is inactive.
+    ```json
+    {
+        "detail": "No active account found with the given credentials"
+    }
+    ```
+
+#### **Endpoint: `POST /auth/refresh/`**
+-   **Purpose:** Refreshes an expired `access` token.
+-   **Authentication:** Public.
+-   **Request Body (JSON):**
+    ```json
+    {
+        "refresh": "<the_long_lived_refresh_token>"
+    }
+    ```
+-   **Success Response (200 OK):**
+    ```json
+    {
+        "access": "<new_access_token>"
+    }
+    ```
+-   **Error Response (401 UNAUTHORIZED):** If the refresh token is invalid or expired.
+    ```json
+    {
+        "detail": "Token is invalid or expired",
+        "code": "token_not_valid"
+    }
+    ```
+
+#### **Endpoint: `POST /auth/password/reset/`**
+-   **Purpose:** Initiates the password reset process by sending an OTP.
+-   **Authentication:** Public.
+-   **Request Body (JSON):**
+    ```json
+    {
+        "email": "user@example.com"
+    }
+    ```
+-   **Success Response (200 OK):**
+    ```json
+    {
+        "message": "If the email exists, an OTP has been sent."
+    }
+    ```
+
+#### **Endpoint: `POST /auth/password/reset/confirm/`**
+-   **Purpose:** Sets a new password using the OTP.
+-   **Authentication:** Public.
+-   **Request Body (JSON):**
+    ```json
+    {
+        "email": "user@example.com",
+        "otp_code": "123456",
+        "new_password": "A_New_Strong_Password123"
+    }
+    ```
+-   **Success Response (200 OK):**
+    ```json
+    {
+        "message": "Password has been reset successfully."
+    }
+    ```
+
+#### **Endpoint: `GET /users/profile/`**
+-   **Purpose:** Retrieves the profile of the currently logged-in user.
+-   **Authentication:** **Required** (Bearer Token).
+-   **Success Response (200 OK):**
+    ```json
+    {
+        "email": "user@example.com",
+        "first_name": "Test",
+        "last_name": "User",
+        "mobile": "+1234567890"
+    }
+    ```
+
+#### **Endpoint: `PATCH /users/profile/`**
+-   **Purpose:** Updates the profile of the currently logged-in user.
+-   **Authentication:** **Required** (Bearer Token).
+-   **Request Body (JSON):** You can send any subset of these fields.
+    ```json
+    {
+        "first_name": "Updated First Name",
+        "mobile": "+0987654321"
+    }
+    ```
+-   **Success Response (200 OK):** Returns the updated user object.
+    ```json
+    {
+        "email": "user@example.com",
+        "first_name": "Updated First Name",
+        "last_name": "User",
+        "mobile": "+0987654321"
+    }
+    ```
+
+#### **Endpoint: `GET /users/`**
+-   **Purpose:** Lists all users in the system. **This is an admin-only feature.** The UI should only expose this to users who are identified as admins upon login.
+-   **Authentication:** **Required** (Bearer Token from an admin user).
+-   **Success Response (200 OK):** A list of user objects.
+    ```json
+    [
+        {
+            "email": "user1@example.com",
+            "first_name": "User",
+            "last_name": "One",
+            "mobile": "+1111111111"
+        },
+        {
+            "email": "user2@example.com",
+            "first_name": "User",
+            "last_name": "Two",
+            "mobile": "+2222222222"
+        }
+    ]
+    ```
+
+---
+
+### **4. Suggested App Flow**
+
+1.  **Initial Screen:** Provide options to "Login" or "Register".
+2.  **Registration:**
+    -   User fills out the registration form.
+    -   App calls `POST /auth/register/`.
+    -   On success, navigate to an "OTP Verification" screen.
+3.  **OTP Verification:**
+    -   User enters the OTP they received.
+    -   App calls `POST /auth/verify/`.
+    -   On success, automatically call `POST /auth/login/` with the user's credentials.
+    -   Store the returned `access` and `refresh` tokens and navigate to the user's profile screen.
+4.  **Login:**
+    -   User fills out the login form.
+    -   App calls `POST /auth/login/`.
+    -   Store tokens and navigate to the profile screen.
+5.  **Profile Screen:**
+    -   On load, call `GET /users/profile/` to display user data.
+    -   Provide an "Edit Profile" feature that uses `PATCH /users/profile/`.
+    -   Include a "Logout" button that securely deletes the stored tokens.
+6.  **Admin View:**
+    -   If a logged-in user is an admin (the backend determines this, but you may need to decode the JWT to check for an `is_staff` claim), display a button or navigation item to view the "All Users" list, which is populated by `GET /users/`.
+
+Please generate a well-structured Flutter app with separate services for API calls, state management to handle user sessions and data, and a clean UI.
