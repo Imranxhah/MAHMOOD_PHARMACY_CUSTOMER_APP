@@ -69,8 +69,11 @@ class _BranchesScreenState extends State<BranchesScreen> {
   }
 
   Future<void> _launchUrl(String url) async {
-    if (!await launchUrl(Uri.parse(url))) {
-      throw Exception('Could not launch $url');
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (!await launchUrl(uri)) {
+        throw Exception('Could not launch $url');
+      }
     }
   }
 
@@ -149,13 +152,15 @@ class _BranchesScreenState extends State<BranchesScreen> {
                   ),
                   trailing: (isNearest ? Icon(Icons.star, color: Theme.of(context).colorScheme.tertiary) : null),
                   onTap: () {
-                    if (branch.googleMapsUrl != null) {
-                      _launchUrl(branch.googleMapsUrl!);
+                    String url;
+                    if (_currentPosition != null) {
+                      url =
+                          'https://www.google.com/maps/dir/?api=1&origin=${_currentPosition!.latitude},${_currentPosition!.longitude}&destination=${branch.latitude},${branch.longitude}';
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Google Maps URL not available for this branch.")),
-                      );
+                      url =
+                          'https://www.google.com/maps/dir/?api=1&destination=${branch.latitude},${branch.longitude}';
                     }
+                    _launchUrl(url);
                   },
                 ),
               );
