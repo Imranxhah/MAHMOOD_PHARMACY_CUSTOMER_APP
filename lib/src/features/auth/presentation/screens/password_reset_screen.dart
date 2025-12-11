@@ -4,8 +4,7 @@ import 'package:customer_app/src/providers/auth_provider.dart';
 import 'package:customer_app/src/constants/app_sizes.dart';
 import 'package:customer_app/src/constants/app_strings.dart';
 import 'package:customer_app/src/features/auth/presentation/screens/password_reset_confirm_screen.dart';
-import 'package:customer_app/src/common_widgets/app_text_form_field.dart';
-import 'package:customer_app/src/common_widgets/app_primary_button.dart';
+import 'package:customer_app/src/common_widgets/custom_widgets.dart';
 import 'package:customer_app/src/constants/app_decorations.dart';
 
 class PasswordResetScreen extends StatefulWidget {
@@ -73,16 +72,16 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                     textAlign: TextAlign.left,
                   ),
                   const SizedBox(height: AppSizes.p48),
-                  AppTextFormField(
+                  CustomTextField(
                     controller: _emailController,
-                    labelText: AppStrings.emailAddress,
+                    label: AppStrings.emailAddress,
                     keyboardType: TextInputType.emailAddress,
-                    prefixIcon: const Icon(Icons.email_outlined),
+                    prefixIcon: Icons.email_outlined,
                     validator: (value) =>
                         (value == null || !value.contains('@')) ? AppStrings.enterValidEmail : null,
                   ),
                   const SizedBox(height: AppSizes.p24),
-                  AppPrimaryButton(
+                  CustomButton(
                     text: AppStrings.sendResetOtp,
                     onPressed: _requestReset,
                     isLoading: _isLoading,

@@ -134,6 +134,19 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
                             ),
                           ],
                         ),
+                        
+                      SizedBox(height: AppSizes.p12),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () => _showDeleteConfirmation(context, prescription.id),
+                          icon: const Icon(Icons.delete_outline, size: 20),
+                          label: const Text("Delete"),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -151,6 +164,45 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
         },
         child: const Icon(Icons.add),
       ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, int prescriptionId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          title: const Text("Delete Prescription"),
+          content: const Text("Are you sure you want to delete this prescription?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(ctx).pop();
+                try {
+                  await Provider.of<PrescriptionProvider>(context, listen: false).deletePrescription(prescriptionId);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Prescription deleted successfully")),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Failed to delete: ${e.toString()}"), backgroundColor: Colors.red),
+                    );
+                  }
+                }
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text("Delete"),
+            ),
+          ],
+        );
+      },
     );
   }
 

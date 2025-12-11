@@ -65,13 +65,25 @@ class ProductProvider with ChangeNotifier {
     }
   }
 
-  Future<void> fetchProducts({String? search, int? categoryId}) async {
+  Future<void> fetchProducts({
+    String? search,
+    int? categoryId,
+    String? ordering,
+    double? minPrice,
+    double? maxPrice,
+  }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final response = await _apiClient.getProducts(search: search, categoryId: categoryId);
+      final response = await _apiClient.getProducts(
+        search: search,
+        categoryId: categoryId,
+        ordering: ordering,
+        minPrice: minPrice,
+        maxPrice: maxPrice,
+      );
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
         _products = data.map((json) => ProductModel.fromJson(json)).toList();

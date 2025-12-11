@@ -8,8 +8,7 @@ import 'package:customer_app/src/features/home/presentation/main_screen.dart';
 import 'package:customer_app/src/features/auth/presentation/screens/password_reset_screen.dart';
 import 'package:customer_app/src/constants/app_decorations.dart';
 import 'package:customer_app/src/features/auth/presentation/screens/signup_screen.dart';
-import 'package:customer_app/src/common_widgets/app_text_form_field.dart';
-import 'package:customer_app/src/common_widgets/app_primary_button.dart';
+import 'package:customer_app/src/common_widgets/custom_widgets.dart';
 import 'package:customer_app/src/common_widgets/app_text_button.dart';
 import 'package:customer_app/src/common_widgets/auth_footer.dart';
 
@@ -25,7 +24,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
-  bool _obscurePassword = true;
 
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
@@ -98,30 +96,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   textAlign: TextAlign.left, // Changed to left align
                 ),
                 const SizedBox(height: AppSizes.p48),
-                AppTextFormField(
+                CustomTextField(
                   controller: _emailController,
-                  labelText: AppStrings.emailAddress,
+                  label: AppStrings.emailAddress,
                   keyboardType: TextInputType.emailAddress,
-                  prefixIcon: const Icon(Icons.email_outlined),
+                  prefixIcon: Icons.email_outlined,
                   validator: (value) => (value == null || !value.contains('@'))
                       ? AppStrings.enterValidEmail
                       : null,
                 ),
                 const SizedBox(height: AppSizes.p20),
-                AppTextFormField(
+                CustomPasswordField(
                   controller: _passwordController,
-                  labelText: AppStrings.password,
-                  obscureText: _obscurePassword,
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    ),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
-                  ),
+                  label: AppStrings.password,
                   validator: (value) => (value == null || value.length < 6)
                       ? AppStrings.passwordTooShort
                       : null,
@@ -141,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: AppSizes.p24),
-                AppPrimaryButton(
+                CustomButton(
                   text: AppStrings.signIn,
                   onPressed: _login,
                   isLoading: _isLoading,

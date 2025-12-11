@@ -12,8 +12,16 @@ class OrderItemModel {
   });
 
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
+    var prodId = json['product_id'];
+    String prodIdStr;
+    if (prodId is Map) {
+      prodIdStr = prodId['id'].toString();
+    } else {
+      prodIdStr = prodId.toString();
+    }
+
     return OrderItemModel(
-      productId: json['product_id'].toString(), // Ensure it's a string
+      productId: prodIdStr, // Ensure it's a string
       quantity: json['quantity'],
       name: json['name'] ?? 'Unknown Product',
       price: json['price'].toString(),

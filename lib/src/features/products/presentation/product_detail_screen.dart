@@ -4,12 +4,12 @@ import 'package:dio/dio.dart';
 import 'package:customer_app/src/models/product_model.dart';
 import 'package:customer_app/src/providers/product_provider.dart';
 import 'package:customer_app/src/providers/auth_provider.dart';
-import 'package:customer_app/src/providers/cart_provider.dart'; // Import CartProvider
-import 'package:customer_app/src/providers/order_provider.dart'; // Import OrderProvider
+import 'package:customer_app/src/features/cart/presentation/checkout_screen.dart';
+import 'package:customer_app/src/providers/cart_provider.dart'; // Correctly import CartProvider
 import 'package:customer_app/src/features/auth/presentation/screens/login_screen.dart';
 import '../../../constants/app_sizes.dart';
 import '../../../constants/app_strings.dart';
-import '../../../common_widgets/primary_button.dart';
+import '../../../common_widgets/custom_widgets.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final ProductModel product;
@@ -89,8 +89,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
   }
 
-  Future<void> _quickOrder() async {
-    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+  Future<void> _buyNow() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     if (!authProvider.isAuthenticated) {
@@ -100,27 +99,29 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
 
     try {
-      // For quick order, we'll use a placeholder address and contact number
-      // In a real app, you might fetch user's default address or prompt them.
-      await orderProvider.quickOrder(
-        productId: _currentProduct.id,
-        quantity: _quantity,
-        shippingAddress: "Default Quick Order Address", // Placeholder
-        contactNumber: "00000000000", // Placeholder
+      final double price = double.tryParse(_currentProduct.price) ?? 0.0;
+      final double total = price * _quantity;
+      
+      final List<Map<String, dynamic>> buyNowItem = [
+        {
+          'product_id': _currentProduct.id,
+          'quantity': _quantity,
+        }
+      ];
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CheckoutScreen(
+            cartItems: buyNowItem,
+            cartTotal: total,
+            isBuyNow: true,
+          ),
+        ),
       );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Quick Order Placed Successfully!")),
-      );
-      // Navigate to order details or home screen
-      Navigator.of(context).popUntil((route) => route.isFirst);
-    } on DioException catch (e) {
-      String errorMessage = e.response?.data['error'] ?? 'Failed to place quick order.';
-      if (!mounted) return;
-      _showErrorDialog("Quick Order Failed", errorMessage);
     } catch (e) {
       if (!mounted) return;
-      _showErrorDialog("Quick Order Failed", e.toString());
+      _showErrorDialog("Buy Now Failed", "Unable to proceed to checkout: $e");
     }
   }
 
@@ -325,7 +326,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             child: Row( // Changed to Row to include Buy Now button
               children: [
                 Expanded(
-                  child: PrimaryButton(
+                  child: CustomButton(
                     text: AppStrings.addToCart,
                     onPressed: () {
                       Provider.of<CartProvider>(context, listen: false).addItem(_currentProduct, _quantity);
@@ -337,9 +338,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ),
                 const SizedBox(width: AppSizes.p16),
                 Expanded(
-                  child: PrimaryButton(
+                  child: CustomButton(
                     text: "Buy Now", // Assuming "Buy Now" string or similar
-                    onPressed: _quickOrder,
+                    onPressed: _buyNow,
                   ),
                 ),
               ],

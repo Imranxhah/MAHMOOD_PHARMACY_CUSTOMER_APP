@@ -5,8 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:customer_app/src/providers/prescription_provider.dart';
 import '../../../../constants/app_sizes.dart';
-import '../../../../common_widgets/primary_button.dart';
-import '../../../../common_widgets/custom_text_field.dart';
+import '../../../../common_widgets/custom_widgets.dart';
 
 class UploadPrescriptionScreen extends StatefulWidget {
   const UploadPrescriptionScreen({super.key});
@@ -116,11 +115,11 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
             SizedBox(height: AppSizes.p24),
             CustomTextField(
               controller: _notesController,
-              hintText: "Optional notes for the pharmacist",
+              hint: "Optional notes for the pharmacist",
               maxLines: 3,
             ),
             SizedBox(height: AppSizes.p32),
-            PrimaryButton(
+            CustomButton(
               text: _isUploading ? "Uploading..." : "Upload Prescription",
               onPressed: _isUploading ? null : () { _uploadPrescription(); },
             ),

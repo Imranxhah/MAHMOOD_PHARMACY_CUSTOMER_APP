@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:customer_app/src/providers/cart_provider.dart'; // Import CartProvider
 import '../../../constants/app_strings.dart';
 import 'home_screen.dart';
-import '../../products/presentation/product_list_screen.dart';
-import '../../profile/presentation/screens/profile_screen.dart';
+import '../../cart/presentation/cart_screen.dart'; // Import CartScreen
+import '../../profile/presentation/screens/settings_screen.dart'; // Import SettingsScreen
 import '../../branches/presentation/screens/branches_screen.dart'; // Import BranchesScreen
+import '../../profile/presentation/screens/my_prescriptions_screen.dart'; // Import MyPrescriptionsScreen
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -13,13 +16,14 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 2; // Home is now at index 2, so it's the default
 
   final List<Widget> _screens = [
-    const HomeScreen(),
-    const ProductListScreen(),
-    const BranchesScreen(), // New 'Locate Store' screen
-    const ProfileScreen(),
+    const CartScreen(),
+    const MyPrescriptionsScreen(),
+    const HomeScreen(), // Home is at index 2
+    const BranchesScreen(),
+    const SettingsScreen(), // Changed from ProfileScreen to SettingsScreen
   ];
 
   void _onItemTapped(int index) {
@@ -30,34 +34,71 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
+          // Cart - Index 0
           BottomNavigationBarItem(
+            icon: Consumer<CartProvider>(
+              builder: (context, cart, child) {
+                return Badge(
+                  isLabelVisible: cart.itemCount > 0,
+                  label: Text('${cart.itemCount}'),
+                  backgroundColor: theme.colorScheme.error,
+                  child: const Icon(Icons.shopping_cart_outlined),
+                );
+              },
+            ),
+            activeIcon: Consumer<CartProvider>(
+              builder: (context, cart, child) {
+                return Badge(
+                  isLabelVisible: cart.itemCount > 0,
+                  label: Text('${cart.itemCount}'),
+                  backgroundColor: theme.colorScheme.error,
+                  child: const Icon(Icons.shopping_cart),
+                );
+              },
+            ),
+            label: "Cart",
+          ),
+          // Prescriptions - Index 1
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long_outlined),
+            activeIcon: Icon(Icons.receipt_long),
+            label: "Prescriptions",
+          ),
+          // Home - Index 2
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
             label: AppStrings.home,
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: AppStrings.search),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.location_on_outlined), // Icon for Locate Store
+          // Branches - Index 3
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.location_on_outlined),
             activeIcon: Icon(Icons.location_on),
-            label: AppStrings.locateStore, // Label for Locate Store
+            label: "Branches",
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outlined),
-            activeIcon: Icon(Icons.person),
-            label: AppStrings.profile,
+          // Profile - Index 4
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.settings_outlined), // Changed icon to settings
+            activeIcon: Icon(Icons.settings),
+            label: "Settings", // Changed label to Settings
           ),
         ],
         currentIndex: _selectedIndex,
-        // selectedItemColor: AppColors.primary, // Handled by FlexColorScheme
-        // unselectedItemColor: AppColors.grey, // Handled by FlexColorScheme
         showUnselectedLabels: true,
         type: BottomNavigationBarType.fixed,
         onTap: _onItemTapped,
+        selectedFontSize: 10,
+        unselectedFontSize: 10,
       ),
     );
   }
 }
+
+
+

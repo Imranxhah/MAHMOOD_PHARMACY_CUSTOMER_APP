@@ -401,6 +401,22 @@ class AuthProvider with ChangeNotifier {
     return false;
   }
 
+  Future<void> changePassword(String oldPassword, String newPassword) async {
+    try {
+      await _apiClient.changePassword({
+        'old_password': oldPassword,
+        'new_password': newPassword,
+      });
+      return Future.value();
+    } on DioException catch (e) {
+      // Re-throw DioException to allow calling widget to handle specific error messages
+      rethrow;
+    } catch (e) {
+      // Re-throw other exceptions as a generic exception
+      throw Exception('An unexpected error occurred during password change: $e');
+    }
+  }
+
     // Admin Methods
   Future<List<User>> getAllUsers() async {
     if (!_isAdmin) return [];

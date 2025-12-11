@@ -59,4 +59,26 @@ class PrescriptionProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> deletePrescription(int id) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiClient.deletePrescription(id);
+      if (response.statusCode == 204) {
+        _prescriptions.removeWhere((p) => p.id == id);
+      }
+    } on DioException catch (e) {
+      _error = e.response?.data['message'] ?? 'Failed to delete prescription.';
+      rethrow;
+    } catch (e) {
+      _error = 'An unexpected error occurred: $e';
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

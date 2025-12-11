@@ -20,6 +20,9 @@ class OrderProvider with ChangeNotifier {
     required String shippingAddress,
     required String contactNumber,
     required List<Map<String, dynamic>> items,
+    int? branchId,
+    String? paymentMethod,
+    String orderType = "Normal",
   }) async {
     _isLoading = true;
     _error = null;
@@ -31,6 +34,9 @@ class OrderProvider with ChangeNotifier {
           "shipping_address": shippingAddress,
           "contact_number": contactNumber,
           "items": items,
+          if (branchId != null) "branch_id": branchId,
+          if (paymentMethod != null) "payment_method": paymentMethod,
+          "order_type": orderType,
         },
       );
       if (response.statusCode == 201) {

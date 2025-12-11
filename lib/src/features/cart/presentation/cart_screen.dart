@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:customer_app/src/providers/cart_provider.dart';
 import '../../../constants/app_sizes.dart';
 import '../../../constants/app_strings.dart';
-import '../../../common_widgets/primary_button.dart';
+import '../../../common_widgets/custom_widgets.dart';
 import 'checkout_screen.dart';
 
 class CartScreen extends StatelessWidget {
@@ -151,7 +151,7 @@ class CartScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: AppSizes.p24),
-                    PrimaryButton(
+                    CustomButton(
                       text: AppStrings.checkout,
                       onPressed: () {
                         Navigator.push(

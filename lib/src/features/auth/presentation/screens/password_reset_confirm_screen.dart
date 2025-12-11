@@ -4,8 +4,7 @@ import 'package:customer_app/src/providers/auth_provider.dart';
 import 'package:customer_app/src/constants/app_sizes.dart';
 import 'package:customer_app/src/constants/app_strings.dart';
 import 'package:customer_app/src/features/home/presentation/main_screen.dart';
-import 'package:customer_app/src/common_widgets/app_text_form_field.dart';
-import 'package:customer_app/src/common_widgets/app_primary_button.dart';
+import 'package:customer_app/src/common_widgets/custom_widgets.dart';
 import 'package:customer_app/src/constants/app_decorations.dart';
 
 class PasswordResetConfirmScreen extends StatefulWidget {
@@ -21,7 +20,6 @@ class _PasswordResetConfirmScreenState extends State<PasswordResetConfirmScreen>
   final _otpController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
-  bool _obscurePassword = true;
 
   Future<void> _confirmReset() async {
     if (_formKey.currentState!.validate()) {
@@ -82,33 +80,22 @@ class _PasswordResetConfirmScreenState extends State<PasswordResetConfirmScreen>
                    textAlign: TextAlign.left,
                 ),
                 const SizedBox(height: AppSizes.p48),
-                AppTextFormField(
+                CustomTextField(
                   controller: _otpController,
-                  labelText: AppStrings.otp,
-                  prefixIcon: const Icon(Icons.password_outlined),
+                  label: AppStrings.otp,
+                  prefixIcon: Icons.password_outlined,
                   validator: (value) =>
                       (value == null || value.isEmpty) ? AppStrings.enterOtp : null,
                 ),
                 const SizedBox(height: AppSizes.p20),
-                AppTextFormField(
+                CustomPasswordField(
                   controller: _passwordController,
-                  labelText: AppStrings.newPassword,
-                  obscureText: _obscurePassword,
-                  prefixIcon: const Icon(Icons.lock_outline),
-                   suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    ),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
-                  ),
+                  label: AppStrings.newPassword,
                   validator: (value) =>
                       (value == null || value.length < 8) ? AppStrings.passwordMinLength : null,
                 ),
                 const SizedBox(height: AppSizes.p24),
-                AppPrimaryButton(
+                CustomButton(
                       text: AppStrings.resetPassword,
                       onPressed: _confirmReset,
                       isLoading: _isLoading,

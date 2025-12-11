@@ -1,3 +1,5 @@
+import '../constants/api_constants.dart';
+
 class ProductModel {
   final int id;
   final String categoryName;
@@ -22,6 +24,15 @@ class ProductModel {
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    String? imageUrl = json['image'];
+    if (imageUrl != null && !imageUrl.startsWith('http')) {
+      if (imageUrl.startsWith('/')) {
+        imageUrl = '${ApiConstants.mediaBaseUrl}$imageUrl';
+      } else {
+        imageUrl = '${ApiConstants.mediaBaseUrl}/$imageUrl';
+      }
+    }
+    
     return ProductModel(
       id: json['id'],
       categoryName: json['category_name'] ?? '',
@@ -29,7 +40,7 @@ class ProductModel {
       description: json['description'] ?? '',
       price: json['price'].toString(),
       stock: json['stock'] ?? 0,
-      image: json['image'],
+      image: imageUrl,
       isActive: json['is_active'] ?? true,
       isFavorite: json['is_favorite'] ?? false,
     );

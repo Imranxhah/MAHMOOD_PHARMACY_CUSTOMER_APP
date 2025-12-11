@@ -6,8 +6,7 @@ import 'package:customer_app/src/constants/app_strings.dart';
 import 'package:customer_app/src/features/auth/presentation/screens/otp_screen.dart';
 import 'package:customer_app/src/constants/app_decorations.dart';
 import 'package:customer_app/src/features/auth/presentation/screens/login_screen.dart';
-import 'package:customer_app/src/common_widgets/app_text_form_field.dart';
-import 'package:customer_app/src/common_widgets/app_primary_button.dart';
+import 'package:customer_app/src/common_widgets/custom_widgets.dart';
 import 'package:customer_app/src/common_widgets/auth_footer.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -26,8 +25,6 @@ class _SignupScreenState extends State<SignupScreen> {
   final _confirmPasswordController = TextEditingController();
   final _phoneNumberController = TextEditingController();
   bool _isLoading = false;
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
 
   Future<void> _signup() async {
     if (_formKey.currentState!.validate()) {
@@ -72,7 +69,7 @@ class _SignupScreenState extends State<SignupScreen> {
         final errors = result['data'] as Map<String, dynamic>;
         String errorMessage = AppStrings.pleaseCorrectErrors;
         errors.forEach((field, messages) {
-          errorMessage +=
+          errorMessage += 
               '${(field.replaceAll('_', ' ').capitalizeFirst() ?? field)}: ${(messages is List ? messages.join(', ') : messages.toString())}\n';
         });
         ScaffoldMessenger.of(
@@ -117,72 +114,49 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: AppSizes.p32),
                 // First Name
-                AppTextFormField(
+                CustomTextField(
                   controller: _firstNameController,
-                  labelText: AppStrings.firstName,
-                  prefixIcon: const Icon(Icons.person_outline),
+                  label: AppStrings.firstName,
+                  prefixIcon: Icons.person_outline,
                   validator: (value) => (value == null || value.isEmpty)
                       ? AppStrings.enterFirstName
                       : null,
                 ),
                 const SizedBox(height: AppSizes.p16),
                 // Last Name
-                AppTextFormField(
+                CustomTextField(
                   controller: _lastNameController,
-                  labelText: AppStrings.lastName,
-                  prefixIcon: const Icon(Icons.person_outline),
+                  label: AppStrings.lastName,
+                  prefixIcon: Icons.person_outline,
                   validator: (value) => (value == null || value.isEmpty)
                       ? AppStrings.enterLastName
                       : null,
                 ),
                 const SizedBox(height: AppSizes.p16),
                 // Email
-                AppTextFormField(
+                CustomTextField(
                   controller: _emailController,
-                  labelText: AppStrings.emailAddress,
+                  label: AppStrings.emailAddress,
                   keyboardType: TextInputType.emailAddress,
-                  prefixIcon: const Icon(Icons.email_outlined),
+                  prefixIcon: Icons.email_outlined,
                   validator: (value) => (value == null || !value.contains('@'))
                       ? AppStrings.enterValidEmail
                       : null,
                 ),
                 const SizedBox(height: AppSizes.p16),
                 // Password
-                AppTextFormField(
+                CustomPasswordField(
                   controller: _passwordController,
-                  labelText: AppStrings.password,
-                  obscureText: _obscurePassword,
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    ),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
-                  ),
+                  label: AppStrings.password,
                   validator: (value) => (value == null || value.length < 8)
                       ? AppStrings.passwordMinLength
                       : null,
                 ),
                 const SizedBox(height: AppSizes.p16),
                 // Confirm Password
-                AppTextFormField(
+                CustomPasswordField(
                   controller: _confirmPasswordController,
-                  labelText: AppStrings.confirmPassword,
-                  obscureText: _obscureConfirmPassword,
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    ),
-                    onPressed: () => setState(
-                      () => _obscureConfirmPassword = !_obscureConfirmPassword,
-                    ),
-                  ),
+                  label: AppStrings.confirmPassword,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return AppStrings.confirmPasswordRequired;
@@ -195,18 +169,18 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: AppSizes.p16),
                 // Phone Number
-                AppTextFormField(
+                CustomTextField(
                   controller: _phoneNumberController,
-                  labelText: AppStrings.phoneNumber,
+                  label: AppStrings.phoneNumber,
                   keyboardType: TextInputType.phone,
-                  prefixIcon: const Icon(Icons.phone_outlined),
+                  prefixIcon: Icons.phone_outlined,
                   validator: (value) => (value == null || value.isEmpty)
                       ? AppStrings.enterPhoneNumber
                       : null,
                 ),
                 const SizedBox(height: AppSizes.p24),
                 // Sign Up Button
-                AppPrimaryButton(
+                CustomButton(
                   text: AppStrings.signUp,
                   onPressed: _signup,
                   isLoading: _isLoading,

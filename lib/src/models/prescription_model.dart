@@ -1,3 +1,5 @@
+import '../constants/api_constants.dart';
+
 class PrescriptionModel {
   final int id;
   final String status;
@@ -16,10 +18,19 @@ class PrescriptionModel {
   });
 
   factory PrescriptionModel.fromJson(Map<String, dynamic> json) {
+    String? imageUrl = json['image'];
+    if (imageUrl != null && !imageUrl.startsWith('http')) {
+      if (imageUrl.startsWith('/')) {
+        imageUrl = '${ApiConstants.mediaBaseUrl}$imageUrl';
+      } else {
+        imageUrl = '${ApiConstants.mediaBaseUrl}/$imageUrl';
+      }
+    }
+
     return PrescriptionModel(
       id: json['id'],
       status: json['status'],
-      imageUrl: json['image'],
+      imageUrl: imageUrl ?? '',
       createdAt: DateTime.parse(json['created_at']),
       notes: json['notes'],
       adminFeedback: json['admin_feedback'],

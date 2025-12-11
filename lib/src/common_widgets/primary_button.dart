@@ -43,7 +43,9 @@ class PrimaryButton extends StatelessWidget {
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    isCreateAccount ? colorScheme.primary : colorScheme.onPrimary,
+                    isCreateAccount
+                        ? colorScheme.primary
+                        : colorScheme.onPrimary,
                   ),
                 ),
               )
