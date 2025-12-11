@@ -103,4 +103,96 @@ class ApiClient {
     // This part is tricky to do from the API client.
     // A better approach is to use a state management solution to listen to auth state changes.
   }
+
+  // --- Products Module ---
+
+  Future<Response> getCategories() async {
+    return await _dio.get('categories/');
+  }
+
+  Future<Response> getHomeData() async {
+    return await _dio.get('products/home/');
+  }
+
+  Future<Response> getProducts({String? search, int? categoryId}) async {
+    final Map<String, dynamic> queryParams = {};
+    if (search != null && search.isNotEmpty) queryParams['search'] = search;
+    if (categoryId != null) queryParams['category'] = categoryId;
+
+    return await _dio.get('products/', queryParameters: queryParams);
+  }
+
+  // --- Favorites Module ---
+
+  Future<Response> toggleFavorite(int productId) async {
+    return await _dio.post('favorites/toggle/', data: {'product_id': productId});
+  }
+
+  Future<Response> getFavorites() async {
+    return await _dio.get('favorites/');
+  }
+
+  // --- Order Management Module ---
+
+  Future<Response> placeOrder(Map<String, dynamic> orderData) async {
+    return await _dio.post('orders/', data: orderData);
+  }
+
+  Future<Response> listOrders() async {
+    return await _dio.get('orders/');
+  }
+
+  Future<Response> getOrderDetail(int orderId) async {
+    return await _dio.get('orders/$orderId/');
+  }
+
+  Future<Response> quickOrder(Map<String, dynamic> orderData) async {
+    return await _dio.post('orders/quick-order/', data: orderData);
+  }
+
+  Future<Response> validateCart(List<Map<String, dynamic>> cartItems) async {
+    return await _dio.post('cart/validate/', data: {'items': cartItems});
+  }
+
+  // --- Prescriptions Module ---
+
+  Future<Response> uploadPrescription({
+    required File image,
+    String? notes,
+  }) async {
+    String fileName = image.path.split('/').last;
+    FormData formData = FormData.fromMap({
+      "image": await MultipartFile.fromFile(image.path, filename: fileName),
+      if (notes != null) "notes": notes,
+    });
+    return await _dio.post(
+      'prescriptions/upload/',
+      data: formData,
+      options: Options(
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      ),
+    );
+  }
+
+  Future<Response> listPrescriptions() async {
+    return await _dio.get('prescriptions/');
+  }
+
+  // --- Branches Module ---
+
+  Future<Response> listBranches() async {
+    return await _dio.get('branches/');
+  }
+
+  Future<Response> findNearestBranch({
+    required double latitude,
+    required double longitude,
+  }) async {
+    return await _dio.get('branches/nearest/', queryParameters: {
+      'lat': latitude,
+      'long': longitude,
+    });
+  }
 }

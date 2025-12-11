@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'src/constants/app_theme.dart';
 import 'src/providers/auth_provider.dart';
+import 'src/providers/product_provider.dart';
+import 'src/providers/order_provider.dart';
+import 'src/providers/cart_provider.dart';
+import 'src/providers/prescription_provider.dart';
+import 'src/providers/branch_provider.dart';
 import 'src/features/auth/presentation/screens/welcome_screen.dart';
 import 'src/features/home/presentation/main_screen.dart';
 
@@ -15,8 +20,15 @@ class MahmoodPharmacyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AuthProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => PrescriptionProvider()),
+        ChangeNotifierProvider(create: (_) => BranchProvider()),
+      ],
       child: MaterialApp(
         title: 'Mahmood Pharmacy',
         debugShowCheckedModeBanner: false,

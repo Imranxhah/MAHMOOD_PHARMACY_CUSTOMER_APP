@@ -5,8 +5,10 @@ import 'package:customer_app/src/constants/app_sizes.dart';
 import 'package:customer_app/src/constants/app_strings.dart';
 import 'package:customer_app/src/features/auth/presentation/screens/welcome_screen.dart';
 import 'package:customer_app/src/features/profile/presentation/screens/edit_profile_screen.dart';
+import 'package:customer_app/src/features/profile/presentation/screens/wishlist_screen.dart'; // Import WishlistScreen
 import 'package:customer_app/src/features/admin/presentation/screens/user_list_screen.dart';
-
+import 'package:customer_app/src/features/profile/presentation/screens/my_prescriptions_screen.dart';
+import 'package:customer_app/src/features/branches/presentation/screens/branches_screen.dart'; // Import BranchesScreen
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -39,7 +41,9 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${AppStrings.nameLabel}${user.firstName} ${user.lastName}'),
+                  Text(
+                    '${AppStrings.nameLabel}${user.firstName} ${user.lastName}',
+                  ),
                   const SizedBox(height: AppSizes.p8),
                   Text('${AppStrings.emailLabel}${user.email}'),
                   const SizedBox(height: AppSizes.p8),
@@ -48,22 +52,59 @@ class ProfileScreen extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const EditProfileScreen(),
+                        ),
                       );
                     },
                     child: const Text(AppStrings.editProfile),
+                  ),
+                  const SizedBox(height: AppSizes.p20),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const WishlistScreen(),
+                        ),
+                      );
+                    },
+                    child: Text(AppStrings.favorites),
+                  ),
+                  const SizedBox(height: AppSizes.p20), // Added spacing
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const MyPrescriptionsScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text(AppStrings.myPrescriptions),
+                  ),
+                  const SizedBox(height: AppSizes.p20), // Added spacing
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const BranchesScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text(AppStrings.ourBranches),
                   ),
                   if (authProvider.isAdmin) ...[
                     const SizedBox(height: AppSizes.p20),
                     ElevatedButton(
                       onPressed: () {
-                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const UserListScreen()),
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const UserListScreen(),
+                          ),
                         );
                       },
                       child: const Text(AppStrings.viewAllUsers),
                     ),
-                  ]
+                  ],
                 ],
               ),
             ),

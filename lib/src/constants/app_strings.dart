@@ -119,4 +119,14 @@ class AppStrings {
   static const String description = 'Description';
   static const String addToCart = 'Add to Cart';
   static const String addedToCart = 'Added to cart';
+
+  // Favorites
+  static const String favorites = 'Favorites';
+
+  // Prescriptions
+  static const String myPrescriptions = 'My Prescriptions';
+
+  // Branches
+  static const String ourBranches = 'Our Branches';
+  static const String locateStore = 'Locate Store';
 }

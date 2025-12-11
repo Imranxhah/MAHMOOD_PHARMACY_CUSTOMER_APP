@@ -7,6 +7,8 @@ class CustomTextField extends StatelessWidget {
   final bool isPassword;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
+  final ValueChanged<String>? onSubmitted;
+  final int? maxLines;
 
   const CustomTextField({
     super.key,
@@ -16,6 +18,8 @@ class CustomTextField extends StatelessWidget {
     this.isPassword = false,
     this.keyboardType = TextInputType.text,
     this.validator,
+    this.onSubmitted,
+    this.maxLines,
   });
 
   @override
@@ -25,7 +29,8 @@ class CustomTextField extends StatelessWidget {
       obscureText: isPassword,
       keyboardType: keyboardType,
       validator: validator,
-      decoration: InputDecoration(
+      onFieldSubmitted: onSubmitted,
+      maxLines: maxLines,      decoration: InputDecoration(
         hintText: hintText,
         prefixIcon: prefixIcon != null
             ? Icon(prefixIcon, color: Theme.of(context).colorScheme.onSurfaceVariant)

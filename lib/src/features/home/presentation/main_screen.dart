@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../constants/app_strings.dart';
 import 'home_screen.dart';
 import '../../products/presentation/product_list_screen.dart';
-import '../../cart/presentation/cart_screen.dart';
 import '../../profile/presentation/screens/profile_screen.dart';
+import '../../branches/presentation/screens/branches_screen.dart'; // Import BranchesScreen
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -18,7 +18,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const ProductListScreen(),
-    const CartScreen(),
+    const BranchesScreen(), // New 'Locate Store' screen
     const ProfileScreen(),
   ];
 
@@ -41,9 +41,9 @@ class _MainScreenState extends State<MainScreen> {
           ),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: AppStrings.search),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart_outlined),
-            activeIcon: Icon(Icons.shopping_cart),
-            label: AppStrings.cart,
+            icon: Icon(Icons.location_on_outlined), // Icon for Locate Store
+            activeIcon: Icon(Icons.location_on),
+            label: AppStrings.locateStore, // Label for Locate Store
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outlined),

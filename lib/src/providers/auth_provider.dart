@@ -24,6 +24,7 @@ class AuthProvider with ChangeNotifier {
   AuthStatus get authStatus => _authStatus;
   User? get user => _user;
   bool get isAdmin => _isAdmin;
+  bool get isAuthenticated => _authStatus == AuthStatus.authenticated;
 
   AuthProvider() {
     _init();
@@ -369,7 +370,7 @@ class AuthProvider with ChangeNotifier {
             return false; // Password reset successful, but auto-login failed
           }
         } on DioException catch (loginError) {
-          print('Auto-login after password reset failed: ${loginError.response?.data}');
+          debugPrint('Auto-login after password reset failed: ${loginError.response?.data}');
           _authStatus = AuthStatus.unauthenticated;
           notifyListeners();
           return false; // Password reset successful, but auto-login failed due to error
@@ -377,7 +378,7 @@ class AuthProvider with ChangeNotifier {
       }
       return false; // Password reset failed
     } catch (e) {
-      print('Password reset confirmation failed: $e');
+      debugPrint('Password reset confirmation failed: $e');
       return false;
     }
   }

@@ -51,7 +51,7 @@ class WelcomeScreen extends StatelessWidget {
               Text(
                 "Discover the best products tailored just for you.",
                 style: textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withAlpha((255 * 0.6).round()),
                   height: 1.5, // Adds better readability line spacing
                 ),
                 textAlign: TextAlign.center,
