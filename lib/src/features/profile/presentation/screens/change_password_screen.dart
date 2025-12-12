@@ -17,7 +17,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _oldPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmNewPasswordController = TextEditingController();
+  final TextEditingController _confirmNewPasswordController =
+      TextEditingController();
   bool _isLoading = false;
 
   @override
@@ -51,17 +52,19 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         String errorMessage = "Failed to change password. Please try again.";
         if (e.response?.data != null && e.response?.data['detail'] != null) {
           errorMessage = e.response!.data['detail'];
-        } else if (e.response?.data != null && e.response?.data['old_password'] != null) {
-          errorMessage = e.response!.data['old_password'][0]; // E.g., "Wrong password."
-        } else if (e.response?.data != null && e.response?.data['new_password'] != null) {
-          errorMessage = e.response!.data['new_password'][0]; // E.g., "Password is too weak."
+        } else if (e.response?.data != null &&
+            e.response?.data['old_password'] != null) {
+          errorMessage =
+              e.response!.data['old_password'][0]; // E.g., "Wrong password."
+        } else if (e.response?.data != null &&
+            e.response?.data['new_password'] != null) {
+          errorMessage = e
+              .response!
+              .data['new_password'][0]; // E.g., "Password is too weak."
         }
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
         );
       } catch (e) {
         if (!mounted) return;
@@ -82,9 +85,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Change Password"),
-      ),
+      appBar: AppBar(title: const Text("Change Password")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSizes.p16),
         child: Form(

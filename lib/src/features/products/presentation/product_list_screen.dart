@@ -32,9 +32,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Products"),
-      ),
+      appBar: AppBar(title: const Text("Products")),
       body: Column(
         children: [
           Padding(

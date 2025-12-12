@@ -8,7 +8,8 @@ class AppStrings {
   static const String password = 'Password';
   static const String forgotPassword = 'Forgot Password?';
   static const String login = 'Login';
-  static const String dontHaveAnAccount = "Don't have an account?"; // Updated name
+  static const String dontHaveAnAccount =
+      "Don't have an account?"; // Updated name
   static const String alreadyHaveAnAccount = 'Already have an account?';
   static const String register = 'Register';
   static const String createAccount = 'Create Account';
@@ -18,36 +19,47 @@ class AppStrings {
   static const String firstName = 'First Name';
   static const String lastName = 'Last Name';
   static const String mobile = 'Mobile';
-  static const String passwordMinLength = 'Password must be at least 8 characters';
+  static const String passwordMinLength =
+      'Password must be at least 8 characters';
   static const String enterValidEmail = 'Enter a valid email';
   static const String enterFirstName = 'Enter your first name';
   static const String enterLastName = 'Enter your last name';
   static const String enterMobile = 'Enter your mobile number';
   static const String enterPhoneNumber = 'Enter your phone number'; // Added
   static const String confirmPassword = 'Confirm Password'; // Added
-  static const String confirmPasswordRequired = 'Confirm password is required'; // Added
+  static const String confirmPasswordRequired =
+      'Confirm password is required'; // Added
   static const String passwordsDoNotMatch = 'Passwords do not match'; // Added
   static const String signUp = 'Sign Up';
   static const String continueWithGoogle = 'Continue with Google'; // Added
   static const String continueWithFacebook = 'Continue with Facebook'; // Added
   static const String welcomeMessage = 'Welcome to Mahmood Pharmacy';
-  
+
   // Errors & Status
-  static const String accountNotVerified = 'Account not verified. A new OTP has been sent to your email.';
-  static const String invalidCredentials = 'Invalid credentials. Please try again.';
-  static const String unknownError = 'An unknown error occurred. Please try again.';
+  static const String accountNotVerified =
+      'Account not verified. A new OTP has been sent to your email.';
+  static const String invalidCredentials =
+      'Invalid credentials. Please try again.';
+  static const String unknownError =
+      'An unknown error occurred. Please try again.';
   static const String passwordTooShort = 'Password is too short';
-  static const String pleaseCorrectErrors = 'Please correct the following errors:\n';
+  static const String pleaseCorrectErrors =
+      'Please correct the following errors:\n';
   static const String signupFailed = 'Signup Failed: ';
 
   // OTP
   static const String otpSent = 'A new OTP has been sent to your email.';
-  static const String otpResendFailed = 'Failed to resend OTP. Please try again.';
-  static const String verifySuccessLoggedIn = 'Verification Successful! You are now logged in.';
-  static const String verifySuccessLoggingIn = 'Verification Successful! Attempting to log you in...';
+  static const String otpResendFailed =
+      'Failed to resend OTP. Please try again.';
+  static const String verifySuccessLoggedIn =
+      'Verification Successful! You are now logged in.';
+  static const String verifySuccessLoggingIn =
+      'Verification Successful! Attempting to log you in...';
   static const String loginSuccess = 'Login Successful!';
-  static const String verifySuccessAutoLoginFailed = 'Verification successful, but auto-login failed. Please log in manually.';
-  static const String verifySuccessPleaseLogin = 'Verification Successful! Please log in.';
+  static const String verifySuccessAutoLoginFailed =
+      'Verification successful, but auto-login failed. Please log in manually.';
+  static const String verifySuccessPleaseLogin =
+      'Verification Successful! Please log in.';
   static const String otpVerifyFailed = 'OTP Verification Failed.';
   static const String verifyOtp = 'Verify OTP';
   static const String otpSentTo = 'An OTP has been sent to ';
@@ -57,11 +69,13 @@ class AppStrings {
   static const String resendOtpIn = 'Resend OTP in ';
 
   // Password Reset
-  static const String resetEmailFailed = 'Failed to send reset email. Please try again.';
+  static const String resetEmailFailed =
+      'Failed to send reset email. Please try again.';
   static const String resetPassword = 'Reset Password';
   static const String sendResetOtp = 'Send Reset OTP';
-  static const String passwordResetSuccess = 'Password reset successful. Please login.';
-  static const String passwordResetFailed = 'Failed to reset password. Please check OTP and try again.';
+  static const String passwordResetSuccess = 'Password reset successful.';
+  static const String passwordResetFailed =
+      'Failed to reset password. Please check OTP and try again.';
   static const String confirmReset = 'Confirm Reset';
   static const String otp = 'OTP';
   static const String enterOtp = 'Enter the OTP';

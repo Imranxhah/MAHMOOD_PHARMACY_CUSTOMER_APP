@@ -30,10 +30,14 @@ class CustomTextField extends StatelessWidget {
       keyboardType: keyboardType,
       validator: validator,
       onFieldSubmitted: onSubmitted,
-      maxLines: maxLines,      decoration: InputDecoration(
+      maxLines: maxLines,
+      decoration: InputDecoration(
         hintText: hintText,
         prefixIcon: prefixIcon != null
-            ? Icon(prefixIcon, color: Theme.of(context).colorScheme.onSurfaceVariant)
+            ? Icon(
+                prefixIcon,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              )
             : null,
       ),
     );

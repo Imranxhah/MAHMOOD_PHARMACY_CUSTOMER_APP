@@ -44,9 +44,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
   }
 
-  Future<void> _toggleFavorite() async {
+  Future<void> _toggleFavorite(ProductModel liveProduct) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    final productProvider = Provider.of<ProductProvider>(
+      context,
+      listen: false,
+    );
 
     if (!authProvider.isAuthenticated) {
       if (!mounted) return;
@@ -55,16 +58,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
 
     try {
-      await productProvider.toggleFavorite(_currentProduct.id);
+      await productProvider.toggleFavorite(liveProduct.id);
+
       if (!mounted) return;
-      setState(() {
-        _currentProduct.isFavorite = !_currentProduct.isFavorite; // Update UI immediately
-      });
-      // Optionally, show a snackbar
-      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_currentProduct.isFavorite ? 'Added to favorites' : 'Removed from favorites'),
+          content: Text(
+            liveProduct
+                    .isFavorite // If this is updated in place
+                ? 'Added to favorites'
+                : 'Removed from favorites',
+          ),
           duration: const Duration(seconds: 1),
         ),
       );
@@ -78,9 +84,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         errorMessage = e.response?.data['message'] ?? errorMessage;
       }
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errorMessage)));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -94,19 +100,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     if (!authProvider.isAuthenticated) {
       if (!mounted) return;
-      _showLoginRequiredDialog();
+      _showLoginRequiredDialog(message: "Please login to place an order.");
       return;
     }
 
     try {
       final double price = double.tryParse(_currentProduct.price) ?? 0.0;
       final double total = price * _quantity;
-      
+
       final List<Map<String, dynamic>> buyNowItem = [
-        {
-          'product_id': _currentProduct.id,
-          'quantity': _quantity,
-        }
+        {'product_id': _currentProduct.id, 'quantity': _quantity},
       ];
 
       Navigator.push(
@@ -125,13 +128,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
   }
 
-  void _showLoginRequiredDialog() {
+  void _showLoginRequiredDialog({
+    String message = "Please login to add items to your favorites.",
+  }) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text("Login Required"),
-          content: const Text("Please login to add items to your favorites."),
+          content: Text(message),
           actions: <Widget>[
             TextButton(
               child: const Text("Cancel"),
@@ -145,7 +150,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 Navigator.of(context).pop();
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()), // Redirect to Login
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
                 );
               },
             ),
@@ -167,11 +172,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             onPressed: () {
               Navigator.of(ctx).pop();
             },
-          )
+          ),
         ],
       ),
     );
   }
+
+  // ... (rest of methods)
 
   @override
   Widget build(BuildContext context) {
@@ -179,12 +186,54 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       appBar: AppBar(
         title: const Text(AppStrings.details),
         actions: [
-          IconButton(
-            onPressed: _toggleFavorite,
-            icon: Icon(
-              _currentProduct.isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: _currentProduct.isFavorite ? Colors.red : null,
-            ),
+          Consumer<ProductProvider>(
+            builder: (context, provider, child) {
+              // Find the live product object from the provider to ensure we have the latest state
+              // Search in products list, favorites, or homeData
+              ProductModel? liveProduct;
+
+              // Check products list
+              if (provider.products.any((p) => p.id == widget.product.id)) {
+                liveProduct = provider.products.firstWhere(
+                  (p) => p.id == widget.product.id,
+                );
+              }
+              // Check favorites
+              else if (provider.favorites.any(
+                (p) => p.id == widget.product.id,
+              )) {
+                liveProduct = provider.favorites.firstWhere(
+                  (p) => p.id == widget.product.id,
+                );
+              }
+              // Check home data
+              else if (provider.homeData != null) {
+                for (var section in provider.homeData!.sections) {
+                  if (section.products.any((p) => p.id == widget.product.id)) {
+                    liveProduct = section.products.firstWhere(
+                      (p) => p.id == widget.product.id,
+                    );
+                    break;
+                  }
+                }
+              }
+
+              // Fallback to widget.product if not found (e.g. from search result not in main lists)
+              // Ideally Provider should have a getProductById or map.
+              liveProduct ??= widget.product;
+
+              return IconButton(
+                onPressed: () => _toggleFavorite(liveProduct!),
+                icon: Icon(
+                  liveProduct.isFavorite
+                      ? Icons.favorite
+                      : Icons.favorite_border,
+                  color: liveProduct.isFavorite
+                      ? Theme.of(context).colorScheme.onPrimary
+                      : null,
+                ),
+              );
+            },
           ),
           IconButton(onPressed: () {}, icon: const Icon(Icons.share)),
         ],
@@ -201,17 +250,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     height: 250,
                     width: double.infinity,
                     color: Theme.of(context).cardColor,
-                    child: _currentProduct.image != null && _currentProduct.image!.isNotEmpty
+                    child:
+                        _currentProduct.image != null &&
+                            _currentProduct.image!.isNotEmpty
                         ? Image.network(
                             _currentProduct.image!,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Center(
-                              child: Icon(
-                                Icons.broken_image,
-                                size: 100,
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
+                            errorBuilder: (context, error, stackTrace) =>
+                                Center(
+                                  child: Icon(
+                                    Icons.broken_image,
+                                    size: 100,
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                ),
                           )
                         : Center(
                             child: Icon(
@@ -234,15 +286,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       children: [
                         Text(
                           _currentProduct.name,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           "Category: ${_currentProduct.categoryName}", // Assuming category name is sufficient
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                         ),
                         const SizedBox(height: 16),
@@ -251,9 +305,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           children: [
                             Text(
                               "\$ ${_currentProduct.price}",
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   ),
                             ),
                             Container(
@@ -262,7 +319,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 borderRadius: BorderRadius.circular(
                                   AppSizes.radius8,
                                 ),
-                                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                                border: Border.all(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.outlineVariant,
+                                ),
                               ),
                               child: Row(
                                 children: [
@@ -290,15 +351,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         const SizedBox(height: 24),
                         Text(
                           AppStrings.description,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           _currentProduct.description,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                                 height: 1.5,
                               ),
                         ),
@@ -323,13 +386,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ),
               ],
             ),
-            child: Row( // Changed to Row to include Buy Now button
+            child: Row(
+              // Changed to Row to include Buy Now button
               children: [
                 Expanded(
                   child: CustomButton(
                     text: AppStrings.addToCart,
                     onPressed: () {
-                      Provider.of<CartProvider>(context, listen: false).addItem(_currentProduct, _quantity);
+                      Provider.of<CartProvider>(
+                        context,
+                        listen: false,
+                      ).addItem(_currentProduct, _quantity);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text(AppStrings.addedToCart)),
                       );

@@ -18,17 +18,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<OrderProvider>(context, listen: false)
-          .getOrderDetail(widget.orderId);
+      Provider.of<OrderProvider>(
+        context,
+        listen: false,
+      ).getOrderDetail(widget.orderId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Order Details"),
-      ),
+      appBar: AppBar(title: const Text("Order Details")),
       body: Consumer<OrderProvider>(
         builder: (context, orderProvider, child) {
           if (orderProvider.isLoading) {
@@ -53,8 +53,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 Text(
                   "${AppStrings.orderPrefix}${order.id}",
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.p8),
                 Text(
@@ -77,8 +77,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 Text(
                   "Shipping Address:",
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   order.shippingAddress,
@@ -88,8 +88,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 Text(
                   "Contact Number:",
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   order.contactNumber,
@@ -101,8 +101,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 Text(
                   "Items:",
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: AppSizes.p8),
                 ListView.builder(
@@ -112,7 +112,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   itemBuilder: (context, index) {
                     final item = order.items[index];
                     return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: AppSizes.p4),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSizes.p4,
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [

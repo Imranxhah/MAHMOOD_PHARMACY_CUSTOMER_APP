@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:customer_app/src/providers/cart_provider.dart';
+import 'package:customer_app/src/providers/auth_provider.dart'; // Import AuthProvider
+import 'package:customer_app/src/features/auth/presentation/screens/login_screen.dart'; // Import LoginScreen
 import '../../../constants/app_sizes.dart';
 import '../../../constants/app_strings.dart';
 import '../../../common_widgets/custom_widgets.dart';
@@ -16,9 +18,7 @@ class CartScreen extends StatelessWidget {
       body: Consumer<CartProvider>(
         builder: (context, cartProvider, child) {
           if (cartProvider.items.isEmpty) {
-            return const Center(
-              child: Text("Your cart is empty."),
-            );
+            return const Center(child: Text("Your cart is empty."));
           }
 
           final cartItems = cartProvider.items.values.toList();
@@ -44,21 +44,30 @@ class CartScreen extends StatelessWidget {
                           Container(
                             height: 60,
                             width: 60,
-                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            child: cartItem.product.image != null && cartItem.product.image!.isNotEmpty
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                            child:
+                                cartItem.product.image != null &&
+                                    cartItem.product.image!.isNotEmpty
                                 ? Image.network(
                                     cartItem.product.image!,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => Center(
-                                      child: Icon(
-                                        Icons.broken_image,
-                                        color: Theme.of(context).colorScheme.error,
-                                      ),
-                                    ),
+                                    errorBuilder:
+                                        (context, error, stackTrace) => Center(
+                                          child: Icon(
+                                            Icons.broken_image,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.error,
+                                          ),
+                                        ),
                                   )
                                 : Icon(
                                     Icons.medication,
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
                                   ),
                           ),
                           const SizedBox(width: 12),
@@ -68,7 +77,9 @@ class CartScreen extends StatelessWidget {
                               children: [
                                 Text(
                                   cartItem.product.name,
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -76,7 +87,9 @@ class CartScreen extends StatelessWidget {
                                 Text(
                                   "\$ ${cartItem.product.price}",
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -87,20 +100,30 @@ class CartScreen extends StatelessWidget {
                             children: [
                               IconButton(
                                 onPressed: () {
-                                  cartProvider.updateItemQuantity(cartItem.product.id, cartItem.quantity - 1);
+                                  cartProvider.updateItemQuantity(
+                                    cartItem.product.id,
+                                    cartItem.quantity - 1,
+                                  );
                                 },
                                 icon: Icon(
                                   Icons.remove_circle_outline,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                               Text(
                                 "${cartItem.quantity}",
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                               IconButton(
                                 onPressed: () {
-                                  cartProvider.updateItemQuantity(cartItem.product.id, cartItem.quantity + 1);
+                                  cartProvider.updateItemQuantity(
+                                    cartItem.product.id,
+                                    cartItem.quantity + 1,
+                                  );
                                 },
                                 icon: Icon(
                                   Icons.add_circle_outline,
@@ -124,7 +147,9 @@ class CartScreen extends StatelessWidget {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Theme.of(context).shadowColor.withValues(alpha: 0.05),
+                      color: Theme.of(
+                        context,
+                      ).shadowColor.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, -4),
                     ),
@@ -137,13 +162,13 @@ class CartScreen extends StatelessWidget {
                       children: [
                         Text(
                           AppStrings.total,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
                           "\$ ${cartProvider.totalAmount.toStringAsFixed(2)}",
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(context).colorScheme.primary,
                               ),
@@ -154,14 +179,50 @@ class CartScreen extends StatelessWidget {
                     CustomButton(
                       text: AppStrings.checkout,
                       onPressed: () {
+                        final authProvider = Provider.of<AuthProvider>(
+                          context,
+                          listen: false,
+                        );
+                        if (!authProvider.isAuthenticated) {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text("Login Required"),
+                              content: const Text(
+                                "Please login to proceed to checkout.",
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: const Text("Cancel"),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(ctx);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const LoginScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text("Login"),
+                                ),
+                              ],
+                            ),
+                          );
+                          return;
+                        }
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                        builder: (context) => CheckoutScreen(
-                          cartItems: cartProvider.toApiCartItems(),
-                          cartTotal: cartProvider.totalAmount,
-                        ),
-                      ),                        );
+                            builder: (context) => CheckoutScreen(
+                              cartItems: cartProvider.toApiCartItems(),
+                              cartTotal: cartProvider.totalAmount,
+                            ),
+                          ),
+                        );
                       },
                     ),
                   ],

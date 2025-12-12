@@ -21,7 +21,9 @@ class BranchModel {
     return BranchModel(
       id: json['id'],
       name: json['name'],
-      distanceKm: json['distance_km'] != null ? (json['distance_km'] as num).toDouble() : null,
+      distanceKm: json['distance_km'] != null
+          ? (json['distance_km'] as num).toDouble()
+          : null,
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),
       timing: json['timing'] ?? 'N/A',

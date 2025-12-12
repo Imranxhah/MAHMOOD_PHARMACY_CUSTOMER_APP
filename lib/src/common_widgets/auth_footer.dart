@@ -18,12 +18,13 @@ class AuthFooter extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(mainText, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-        AppTextButton(
-          text: linkText,
-          onPressed: onLinkPressed,
-          isBold: true,
+        Text(
+          mainText,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
+        AppTextButton(text: linkText, onPressed: onLinkPressed, isBold: true),
       ],
     );
   }

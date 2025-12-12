@@ -47,8 +47,8 @@ class _AddressListScreenState extends State<AddressListScreen> {
               Text(
                 isEditing ? "Edit Address" : "Add New Address",
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 24),
               Form(
@@ -72,23 +72,33 @@ class _AddressListScreenState extends State<AddressListScreen> {
                 text: isEditing ? "Update Address" : "Save Address",
                 onPressed: () async {
                   if (formKey.currentState?.validate() ?? false) {
-                    final provider = Provider.of<AddressProvider>(context, listen: false);
+                    final provider = Provider.of<AddressProvider>(
+                      context,
+                      listen: false,
+                    );
                     final success = isEditing
-                        ? await provider.updateAddress(address.id, addressController.text.trim())
-                        : await provider.createAddress(addressController.text.trim());
+                        ? await provider.updateAddress(
+                            address.id,
+                            addressController.text.trim(),
+                          )
+                        : await provider.createAddress(
+                            addressController.text.trim(),
+                          );
 
                     if (success && context.mounted) {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            isEditing ? "Address updated successfully" : "Address added successfully",
+                            isEditing
+                                ? "Address updated successfully"
+                                : "Address added successfully",
                           ),
                           backgroundColor: Colors.green,
                         ),
                       );
                     } else if (context.mounted && provider.error != null) {
-                       ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(provider.error!),
                           backgroundColor: Colors.red,
@@ -120,14 +130,17 @@ class _AddressListScreenState extends State<AddressListScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context); // Close dialog
-              final provider = Provider.of<AddressProvider>(context, listen: false);
+              final provider = Provider.of<AddressProvider>(
+                context,
+                listen: false,
+              );
               final success = await provider.deleteAddress(id);
               if (success && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Address deleted")),
                 );
               } else if (context.mounted && provider.error != null) {
-                 ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(provider.error!),
                     backgroundColor: Colors.red,
@@ -146,9 +159,7 @@ class _AddressListScreenState extends State<AddressListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("My Addresses"),
-      ),
+      appBar: AppBar(title: const Text("My Addresses")),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddressSheet(context),
         child: const Icon(Icons.add),
@@ -167,7 +178,9 @@ class _AddressListScreenState extends State<AddressListScreen> {
                   Icon(
                     Icons.location_off_outlined,
                     size: 64,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant.withOpacity(0.5),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -198,7 +211,9 @@ class _AddressListScreenState extends State<AddressListScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withOpacity(0.5),
                   ),
                 ),
                 child: Padding(
@@ -208,7 +223,9 @@ class _AddressListScreenState extends State<AddressListScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primaryContainer.withOpacity(0.3),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -223,9 +240,8 @@ class _AddressListScreenState extends State<AddressListScreen> {
                           children: [
                             Text(
                               address.address,
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(fontWeight: FontWeight.w500),
                             ),
                           ],
                         ),
@@ -239,28 +255,36 @@ class _AddressListScreenState extends State<AddressListScreen> {
                             _confirmDelete(context, address.id);
                           }
                         },
-                        itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                          const PopupMenuItem<String>(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                Icon(Icons.edit, size: 20),
-                                SizedBox(width: 12),
-                                Text('Edit'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                Icon(Icons.delete, size: 20, color: Colors.red),
-                                SizedBox(width: 12),
-                                Text('Delete', style: TextStyle(color: Colors.red)),
-                              ],
-                            ),
-                          ),
-                        ],
+                        itemBuilder: (BuildContext context) =>
+                            <PopupMenuEntry<String>>[
+                              const PopupMenuItem<String>(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit, size: 20),
+                                    SizedBox(width: 12),
+                                    Text('Edit'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.delete,
+                                      size: 20,
+                                      color: Colors.red,
+                                    ),
+                                    SizedBox(width: 12),
+                                    Text(
+                                      'Delete',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                       ),
                     ],
                   ),

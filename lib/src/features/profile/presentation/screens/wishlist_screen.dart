@@ -25,9 +25,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppStrings.favorites),
-      ),
+      appBar: AppBar(title: const Text(AppStrings.favorites)),
       body: Consumer<ProductProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
@@ -59,7 +57,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ProductDetailScreen(product: product),
+                      builder: (context) =>
+                          ProductDetailScreen(product: product),
                     ),
                   );
                 },

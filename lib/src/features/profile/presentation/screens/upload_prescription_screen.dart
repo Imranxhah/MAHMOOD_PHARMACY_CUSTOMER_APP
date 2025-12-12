@@ -11,7 +11,8 @@ class UploadPrescriptionScreen extends StatefulWidget {
   const UploadPrescriptionScreen({super.key});
 
   @override
-  State<UploadPrescriptionScreen> createState() => _UploadPrescriptionScreenState();
+  State<UploadPrescriptionScreen> createState() =>
+      _UploadPrescriptionScreenState();
 }
 
 class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
@@ -38,7 +39,10 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
     });
 
     try {
-      await Provider.of<PrescriptionProvider>(context, listen: false).uploadPrescription(
+      await Provider.of<PrescriptionProvider>(
+        context,
+        listen: false,
+      ).uploadPrescription(
         image: File(_imageFile!.path),
         notes: _notesController.text.isEmpty ? null : _notesController.text,
       );
@@ -47,7 +51,10 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
       Navigator.of(context).pop(); // Go back after successful upload
     } catch (e) {
       if (!mounted) return;
-      _showSnackBar("Failed to upload prescription: ${e.toString()}", Colors.red);
+      _showSnackBar(
+        "Failed to upload prescription: ${e.toString()}",
+        Colors.red,
+      );
     } finally {
       setState(() {
         _isUploading = false;
@@ -74,9 +81,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Upload Prescription"),
-      ),
+      appBar: AppBar(title: const Text("Upload Prescription")),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(AppSizes.p16),
         child: Column(
@@ -89,13 +94,12 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(AppSizes.radius12),
-                  border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                 ),
                 child: _imageFile != null
-                    ? Image.file(
-                        File(_imageFile!.path),
-                        fit: BoxFit.cover,
-                      )
+                    ? Image.file(File(_imageFile!.path), fit: BoxFit.cover)
                     : Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -121,7 +125,11 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
             SizedBox(height: AppSizes.p32),
             CustomButton(
               text: _isUploading ? "Uploading..." : "Upload Prescription",
-              onPressed: _isUploading ? null : () { _uploadPrescription(); },
+              onPressed: _isUploading
+                  ? null
+                  : () {
+                      _uploadPrescription();
+                    },
             ),
           ],
         ),

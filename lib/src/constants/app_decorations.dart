@@ -20,33 +20,52 @@ abstract final class AppDecorations {
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: theme.colorScheme.surfaceContainerHighest, // Theme-aware light background
+      fillColor: theme
+          .colorScheme
+          .surfaceContainerHighest, // Theme-aware light background
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16.0),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16.0),
-        borderSide: BorderSide(color: theme.colorScheme.outlineVariant), // Theme-aware subtle border
+        borderSide: BorderSide(
+          color: theme.colorScheme.outlineVariant,
+        ), // Theme-aware subtle border
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16.0),
-        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2.0), // Highlight on focus
+        borderSide: BorderSide(
+          color: theme.colorScheme.primary,
+          width: 2.0,
+        ), // Highlight on focus
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16.0),
-        borderSide: BorderSide(color: theme.colorScheme.error, width: 1.5), // Theme error color
+        borderSide: BorderSide(
+          color: theme.colorScheme.error,
+          width: 1.5,
+        ), // Theme error color
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16.0),
-        borderSide: BorderSide(color: theme.colorScheme.error, width: 2.0), // Theme error color
+        borderSide: BorderSide(
+          color: theme.colorScheme.error,
+          width: 2.0,
+        ), // Theme error color
       ),
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 24.0,
         vertical: 20.0,
       ),
-      labelStyle: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-      hintStyle: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant.withAlpha((255 * 0.6).round())),
+      labelStyle: theme.textTheme.titleMedium?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+      hintStyle: theme.textTheme.bodyLarge?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant.withAlpha(
+          (255 * 0.6).round(),
+        ),
+      ),
       floatingLabelBehavior: FloatingLabelBehavior.auto,
     );
   }
@@ -59,9 +78,7 @@ abstract final class AppDecorations {
       padding: const EdgeInsets.symmetric(vertical: 18.0),
       elevation: 0,
       minimumSize: const Size(double.infinity, 56.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
       textStyle: const TextStyle(
         fontSize: 18.0,
         fontWeight: FontWeight.w600,
@@ -78,7 +95,7 @@ abstract final class AppDecorations {
       letterSpacing: -0.5,
     );
   }
-  
+
   static TextStyle modernSubtitleStyle(BuildContext context) {
     final theme = Theme.of(context);
     return theme.textTheme.bodyLarge!.copyWith(

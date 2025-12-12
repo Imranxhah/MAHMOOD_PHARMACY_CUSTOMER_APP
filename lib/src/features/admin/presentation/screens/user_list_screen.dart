@@ -16,7 +16,10 @@ class _UserListScreenState extends State<UserListScreen> {
   @override
   void initState() {
     super.initState();
-    _usersFuture = Provider.of<AuthProvider>(context, listen: false).getAllUsers();
+    _usersFuture = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).getAllUsers();
   }
 
   @override

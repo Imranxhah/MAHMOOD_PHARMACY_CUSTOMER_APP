@@ -10,8 +10,8 @@ import 'src/providers/branch_provider.dart';
 import 'src/providers/address_provider.dart';
 import 'src/providers/theme_provider.dart'; // Import ThemeProvider
 import 'src/features/auth/presentation/screens/welcome_screen.dart';
-import 'src/features/home/presentation/main_screen.dart';
-
+import 'src/features/splash/presentation/splash_screen.dart'; // Import SplashScreen
+import 'src/features/home/presentation/main_screen.dart'; // Keep MainScreen import if needed elsewhere or redundant
 
 void main() {
   runApp(const MahmoodPharmacyApp());
@@ -31,9 +31,12 @@ class MahmoodPharmacyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PrescriptionProvider()),
         ChangeNotifierProvider(create: (_) => BranchProvider()),
         ChangeNotifierProvider(create: (_) => AddressProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()), // Add ThemeProvider
+        ChangeNotifierProvider(
+          create: (_) => ThemeProvider(),
+        ), // Add ThemeProvider
       ],
-      child: Consumer<ThemeProvider>( // Use Consumer for ThemeProvider
+      child: Consumer<ThemeProvider>(
+        // Use Consumer for ThemeProvider
         builder: (context, themeProvider, child) {
           return MaterialApp(
             title: 'Mahmood Pharmacy',
@@ -41,20 +44,7 @@ class MahmoodPharmacyApp extends StatelessWidget {
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: themeProvider.themeMode, // Use themeProvider's themeMode
-            home: Consumer<AuthProvider>(
-              builder: (context, auth, _) {
-                switch (auth.authStatus) {
-                  case AuthStatus.uninitialized:
-                    return const Center(child: CircularProgressIndicator());
-                  case AuthStatus.unauthenticated:
-                    return const WelcomeScreen();
-                  case AuthStatus.authenticated:
-                    return const MainScreen();
-                  default:
-                    return const WelcomeScreen();
-                }
-              },
-            ),
+            home: const SplashScreen(),
           );
         },
       ),

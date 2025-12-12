@@ -30,8 +30,10 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   int _selectedPaymentIndex = 0; // 0 for Cash on Delivery, 1 for Card
   String _selectedOrderType = "Normal"; // Default to Normal
-  final TextEditingController _shippingAddressController = TextEditingController();
-  final TextEditingController _contactNumberController = TextEditingController();
+  final TextEditingController _shippingAddressController =
+      TextEditingController();
+  final TextEditingController _contactNumberController =
+      TextEditingController();
   BranchModel? _selectedBranch;
   AddressModel? _selectedAddress; // For address dropdown
   bool _isValidatingCart = true;
@@ -47,10 +49,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Default values for address/contact for now, user can fill these later.
     _shippingAddressController.text = "123 Main Street, New York, NY";
     _contactNumberController.text = "+1234567890";
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<BranchProvider>(context, listen: false).listBranches();
-      Provider.of<AddressProvider>(context, listen: false).fetchAddresses(); // Fetch addresses
+      Provider.of<AddressProvider>(
+        context,
+        listen: false,
+      ).fetchAddresses(); // Fetch addresses
     });
   }
 
@@ -69,11 +74,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
-      final validationResult = await orderProvider.validateCart(widget.cartItems);
+      final validationResult = await orderProvider.validateCart(
+        widget.cartItems,
+      );
       if (!validationResult['valid']) {
-        _cartValidationErrorMessage = (validationResult['errors'] as List).join('\n');
+        _cartValidationErrorMessage = (validationResult['errors'] as List).join(
+          '\n',
+        );
         if (!mounted) return;
-        _showErrorDialog("Cart Validation Failed", _cartValidationErrorMessage!);
+        _showErrorDialog(
+          "Cart Validation Failed",
+          _cartValidationErrorMessage!,
+        );
       }
     } catch (e) {
       if (!mounted) return;
@@ -88,27 +100,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _placeOrder() async {
     if (_cartValidationErrorMessage != null) {
-      _showErrorDialog("Cannot Place Order", "Please resolve cart validation issues first.");
+      _showErrorDialog(
+        "Cannot Place Order",
+        "Please resolve cart validation issues first.",
+      );
       return;
     }
-    
-    if (_shippingAddressController.text.isEmpty || _contactNumberController.text.isEmpty) {
-      _showErrorDialog("Missing Information", "Please provide shipping address and contact number.");
+
+    if (_shippingAddressController.text.isEmpty ||
+        _contactNumberController.text.isEmpty) {
+      _showErrorDialog(
+        "Missing Information",
+        "Please provide shipping address and contact number.",
+      );
       return;
     }
 
     // Branch selection is mandatory only if it's a "Normal" order type or if using Normal endpoint logic
     // If using Quick endpoint, branch might not be supported.
-    // If widget.isBuyNow is false, we ALWAYS use placeOrder (Normal endpoint), so Branch is likely needed unless Quick Type implies no branch? 
+    // If widget.isBuyNow is false, we ALWAYS use placeOrder (Normal endpoint), so Branch is likely needed unless Quick Type implies no branch?
     // Assuming Branch is required for Normal Endpoint regardless of type string.
     if (!widget.isBuyNow && _selectedBranch == null) {
-       _showErrorDialog("Missing Information", "Please select a branch.");
-       return;
+      _showErrorDialog("Missing Information", "Please select a branch.");
+      return;
     }
-    
+
     if (widget.cartItems.isEmpty) {
-       _showErrorDialog("Error", "Cart is empty.");
-       return;
+      _showErrorDialog("Error", "Cart is empty.");
+      return;
     }
 
     final orderProvider = Provider.of<OrderProvider>(context, listen: false);
@@ -138,24 +157,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
 
       if (!mounted) return;
-      
+
       if (!widget.isBuyNow) {
-        cartProvider.clearCart(); // Clear cart after successful order only if not Buy Now
+        cartProvider
+            .clearCart(); // Clear cart after successful order only if not Buy Now
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text(AppStrings.orderPlacedSuccess)),
       );
-      Navigator.of(context).popUntil((route) => route.isFirst); // Navigate back to main screen
+      Navigator.of(
+        context,
+      ).popUntil((route) => route.isFirst); // Navigate back to main screen
     } on DioException catch (e) {
-      String errorMessage = e.response?.data['error'] ?? 'Failed to place order.';
+      String errorMessage =
+          e.response?.data['error'] ?? 'Failed to place order.';
       if (e.response?.statusCode == 400 && e.response?.data is Map) {
-         final data = e.response?.data as Map;
-         if (data.containsKey('error')) {
-            errorMessage = data['error'];
-         } else if (data.containsKey('errors')) {
-            errorMessage = data['errors'].toString();
-         }
+        final data = e.response?.data as Map;
+        if (data.containsKey('error')) {
+          errorMessage = data['error'];
+        } else if (data.containsKey('errors')) {
+          errorMessage = data['errors'].toString();
+        }
       }
       if (!mounted) return;
       _showErrorDialog("Order Failed", errorMessage);
@@ -177,7 +200,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             onPressed: () {
               Navigator.of(ctx).pop();
             },
-          )
+          ),
         ],
       ),
     );
@@ -194,10 +217,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   // Order Type Selection
+                  // Order Type Selection
                   Text(
                     "Order Type",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.p12),
                   Row(
@@ -235,19 +260,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   // Saved Addresses Dropdown
                   Text(
                     "Select Saved Address",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.p12),
                   Consumer<AddressProvider>(
                     builder: (context, addressProvider, child) {
                       if (addressProvider.isLoading) {
-                        return const Center(child: Padding(padding: EdgeInsets.all(8.0), child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))));
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        );
                       }
                       return DropdownButtonFormField<AddressModel>(
                         value: _selectedAddress,
                         decoration: InputDecoration(
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           hintText: "Choose from saved addresses",
                         ),
                         isExpanded: true,
@@ -277,22 +318,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   // Address Section
                   Text(
                     AppStrings.shippingAddress,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.p12),
                   CustomTextField(
                     controller: _shippingAddressController,
                     hint: "Enter your shipping address",
-                    validator: (value) => value!.isEmpty ? "Address cannot be empty" : null,
+                    validator: (value) =>
+                        value!.isEmpty ? "Address cannot be empty" : null,
                   ),
                   const SizedBox(height: AppSizes.p12),
                   CustomTextField(
                     controller: _contactNumberController,
                     hint: "Enter your contact number",
                     keyboardType: TextInputType.phone,
-                    validator: (value) => value!.isEmpty ? "Contact number cannot be empty" : null,
+                    validator: (value) => value!.isEmpty
+                        ? "Contact number cannot be empty"
+                        : null,
                   ),
                   const SizedBox(height: AppSizes.p24),
 
@@ -300,22 +344,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   if (_selectedOrderType == "Normal") ...[
                     Text(
                       "Select Branch",
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: AppSizes.p12),
                     Consumer<BranchProvider>(
                       builder: (context, branchProvider, child) {
                         if (branchProvider.isLoading) {
-                          return const Center(child: CircularProgressIndicator());
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
                         }
                         if (branchProvider.error != null) {
-                          return Text(branchProvider.error!, style: const TextStyle(color: Colors.red));
+                          return Text(
+                            branchProvider.error!,
+                            style: const TextStyle(color: Colors.red),
+                          );
                         }
                         return DropdownButtonFormField<BranchModel>(
                           value: _selectedBranch,
                           decoration: InputDecoration(
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                           ),
                           hint: const Text("Choose a branch"),
                           isExpanded: true, // Prevent overflow
@@ -324,7 +380,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               value: branch,
                               child: Text(
                                 branch.name,
-                                overflow: TextOverflow.ellipsis, // Handle text overflow
+                                overflow: TextOverflow
+                                    .ellipsis, // Handle text overflow
                               ),
                             );
                           }).toList(),
@@ -338,13 +395,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                     const SizedBox(height: AppSizes.p24),
                   ],
-                  
+
                   // Payment Method
                   Text(
                     AppStrings.paymentMethod,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.p12),
                   Container(
@@ -398,9 +455,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   // Order Summary
                   Text(
                     AppStrings.orderSummary,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.p12),
                   Container(
@@ -413,12 +470,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [Text(AppStrings.subtotal), Text("\$ ${widget.cartTotal.toStringAsFixed(2)}")],
+                          children: [
+                            Text(AppStrings.subtotal),
+                            Text("\$ ${widget.cartTotal.toStringAsFixed(2)}"),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         const Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [Text(AppStrings.deliveryFee), Text("\$ 2.00")], // Hardcoded delivery fee for now
+                          children: [
+                            Text(AppStrings.deliveryFee),
+                            Text("\$ 2.00"),
+                          ], // Hardcoded delivery fee for now
                         ),
                         const Divider(height: 24),
                         Row(
@@ -426,15 +489,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           children: [
                             Text(
                               AppStrings.total,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Text(
                               "\$ ${(widget.cartTotal + 2.00).toStringAsFixed(2)}", // Hardcoded delivery fee
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   ),
                             ),
                           ],

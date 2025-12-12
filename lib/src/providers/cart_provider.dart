@@ -28,10 +28,7 @@ class CartProvider with ChangeNotifier {
     } else {
       _items.putIfAbsent(
         product.id,
-        () => CartItemModel(
-          product: product,
-          quantity: quantity,
-        ),
+        () => CartItemModel(product: product, quantity: quantity),
       );
     }
     notifyListeners();
@@ -66,8 +63,6 @@ class CartProvider with ChangeNotifier {
 
   // Method to convert cart items to the API format
   List<Map<String, dynamic>> toApiCartItems() {
-    return _items.values
-        .map((item) => item.toJsonApi())
-        .toList();
+    return _items.values.map((item) => item.toJsonApi()).toList();
   }
 }

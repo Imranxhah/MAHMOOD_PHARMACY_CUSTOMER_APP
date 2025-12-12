@@ -5,10 +5,7 @@ class HomeDataModel {
   final List<CategoryModel> categories;
   final List<HomeSectionModel> sections;
 
-  HomeDataModel({
-    required this.categories,
-    required this.sections,
-  });
+  HomeDataModel({required this.categories, required this.sections});
 
   factory HomeDataModel.fromJson(Map<String, dynamic> json) {
     return HomeDataModel(

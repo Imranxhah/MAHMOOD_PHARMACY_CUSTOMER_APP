@@ -50,7 +50,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => OrderDetailScreen(orderId: order.id),
+                      builder: (context) =>
+                          OrderDetailScreen(orderId: order.id),
                     ),
                   );
                 },
@@ -97,13 +98,17 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       const SizedBox(height: 8),
                       Text(
                         "${AppStrings.datePrefix}${order.createdAt.toLocal().toString().split(' ')[0]}",
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text("${order.items.length}${AppStrings.itemsSuffix}"),
+                          Text(
+                            "${order.items.length}${AppStrings.itemsSuffix}",
+                          ),
                           Text(
                             "\$ ${order.totalAmount}",
                             style: TextStyle(

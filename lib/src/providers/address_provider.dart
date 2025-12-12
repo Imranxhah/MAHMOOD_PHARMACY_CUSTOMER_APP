@@ -101,11 +101,11 @@ class AddressProvider extends ChangeNotifier {
         return true;
       }
     } on DioException catch (e) {
-       // 404 is also considered "success" in terms of "address is gone" for the list
+      // 404 is also considered "success" in terms of "address is gone" for the list
       if (e.response?.statusCode == 404) {
-          _addresses.removeWhere((a) => a.id == id);
-          notifyListeners();
-          return true;
+        _addresses.removeWhere((a) => a.id == id);
+        notifyListeners();
+        return true;
       }
       _error = e.response?.data['detail'] ?? "Failed to delete address";
     } catch (e) {

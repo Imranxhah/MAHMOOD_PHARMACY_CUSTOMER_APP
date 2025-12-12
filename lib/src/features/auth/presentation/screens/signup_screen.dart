@@ -69,7 +69,7 @@ class _SignupScreenState extends State<SignupScreen> {
         final errors = result['data'] as Map<String, dynamic>;
         String errorMessage = AppStrings.pleaseCorrectErrors;
         errors.forEach((field, messages) {
-          errorMessage += 
+          errorMessage +=
               '${(field.replaceAll('_', ' ').capitalizeFirst() ?? field)}: ${(messages is List ? messages.join(', ') : messages.toString())}\n';
         });
         ScaffoldMessenger.of(

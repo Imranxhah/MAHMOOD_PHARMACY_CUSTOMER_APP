@@ -22,7 +22,10 @@ class PrescriptionProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _apiClient.uploadPrescription(image: image, notes: notes);
+      final response = await _apiClient.uploadPrescription(
+        image: image,
+        notes: notes,
+      );
       if (response.statusCode == 201) {
         _prescriptions.insert(0, PrescriptionModel.fromJson(response.data));
         return Future.value();
@@ -39,7 +42,9 @@ class PrescriptionProvider with ChangeNotifier {
     }
   }
 
-  Future<void> listPrescriptions() async {
+  Future<void> listPrescriptions({bool refresh = false}) async {
+    if (!refresh && _prescriptions.isNotEmpty) return;
+
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -48,7 +53,9 @@ class PrescriptionProvider with ChangeNotifier {
       final response = await _apiClient.listPrescriptions();
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        _prescriptions = data.map((json) => PrescriptionModel.fromJson(json)).toList();
+        _prescriptions = data
+            .map((json) => PrescriptionModel.fromJson(json))
+            .toList();
       }
     } on DioException catch (e) {
       _error = e.response?.data['message'] ?? 'Failed to load prescriptions.';

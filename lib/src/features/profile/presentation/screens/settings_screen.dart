@@ -21,6 +21,7 @@ class SettingsScreen extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
     final theme = Theme.of(context);
+    final isAuthenticated = authProvider.isAuthenticated;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -34,69 +35,83 @@ class SettingsScreen extends StatelessWidget {
         ),
         elevation: 0,
       ),
-      body: user == null
+      body: (isAuthenticated && user == null)
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               child: Column(
                 children: [
-                  // Profile Header Card
-                  _buildProfileHeader(context, user, theme),
+                  // Profile Header Card (Only if authenticated)
+                  if (isAuthenticated && user != null)
+                    _buildProfileHeader(context, user, theme),
 
                   const SizedBox(height: AppSizes.p16),
 
                   // Account Section
                   _buildSectionTitle(context, "Account", theme),
                   _buildMenuCard(context, theme, [
-                    _MenuItem(
-                      icon: Icons.edit_outlined,
-                      title: AppStrings.editProfile,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const EditProfileScreen(),
+                    if (isAuthenticated) ...[
+                      _MenuItem(
+                        icon: Icons.edit_outlined,
+                        title: AppStrings.editProfile,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const EditProfileScreen(),
+                          ),
                         ),
                       ),
-                    ),
-                    _MenuItem(
-                      icon: Icons.favorite_outline,
-                      title: AppStrings.favorites,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const WishlistScreen(),
+                      _MenuItem(
+                        icon: Icons.favorite_outline,
+                        title: AppStrings.favorites,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const WishlistScreen(),
+                          ),
                         ),
                       ),
-                    ),
-                    _MenuItem(
-                      icon: Icons.receipt_long_outlined,
-                      title: AppStrings.myPrescriptions,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MyPrescriptionsScreen(),
+                      _MenuItem(
+                        icon: Icons.receipt_long_outlined,
+                        title: AppStrings.myPrescriptions,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MyPrescriptionsScreen(),
+                          ),
                         ),
                       ),
-                    ),
-                    _MenuItem(
-                      icon: Icons.location_on_outlined,
-                      title: "My Addresses",
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AddressListScreen(),
+                      _MenuItem(
+                        icon: Icons.location_on_outlined,
+                        title: "My Addresses",
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AddressListScreen(),
+                          ),
                         ),
                       ),
-                    ),
-                    _MenuItem(
-                      icon: Icons.lock_outline,
-                      title: "Change Password",
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ChangePasswordScreen(),
+                      _MenuItem(
+                        icon: Icons.lock_outline,
+                        title: "Change Password",
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ChangePasswordScreen(),
+                          ),
                         ),
                       ),
-                    ),
+                    ] else ...[
+                      _MenuItem(
+                        icon: Icons.login,
+                        title: "Login",
+                        onTap: () => Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (_) => const WelcomeScreen(),
+                          ),
+                          (route) => false,
+                        ),
+                      ),
+                    ],
                   ]),
 
                   const SizedBox(height: AppSizes.p16),
@@ -118,8 +133,8 @@ class SettingsScreen extends StatelessWidget {
 
                   const SizedBox(height: AppSizes.p16),
 
-                  // Admin Section (if admin)
-                  if (authProvider.isAdmin) ...[
+                  // Admin Section (if admin and authenticated)
+                  if (isAuthenticated && authProvider.isAdmin) ...[
                     _buildSectionTitle(context, "Admin", theme),
                     _buildMenuCard(context, theme, [
                       _MenuItem(
@@ -142,10 +157,11 @@ class SettingsScreen extends StatelessWidget {
 
                   const SizedBox(height: AppSizes.p24),
 
-                  // Logout Button
-                  _buildLogoutButton(context, authProvider, theme),
-
-                  const SizedBox(height: AppSizes.p32),
+                  // Logout Button (Only if authenticated)
+                  if (isAuthenticated) ...[
+                    _buildLogoutButton(context, authProvider, theme),
+                    const SizedBox(height: AppSizes.p32),
+                  ],
                 ],
               ),
             ),

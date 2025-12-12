@@ -115,14 +115,18 @@ class _ProductCardState extends State<ProductCard>
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(12),
                           ),
-                          image: (widget.product.image != null && widget.product.image!.startsWith('http'))
+                          image:
+                              (widget.product.image != null &&
+                                  widget.product.image!.startsWith('http'))
                               ? DecorationImage(
                                   image: NetworkImage(widget.product.image!),
                                   fit: BoxFit.cover,
                                 )
                               : null,
                         ),
-                        child: (widget.product.image == null || !widget.product.image!.startsWith('http'))
+                        child:
+                            (widget.product.image == null ||
+                                !widget.product.image!.startsWith('http'))
                             ? Center(
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
@@ -242,9 +246,9 @@ class _ProductCardState extends State<ProductCard>
                                           ? Icons.favorite
                                           : Icons.favorite_border,
                                       color: widget.product.isFavorite
-                                          ? const Color(0xFFE53935)
+                                          ? colorScheme.primary
                                           : colorScheme.onSurfaceVariant
-                                                .withOpacity(0.6),
+                                                .withValues(alpha: 0.6),
                                       size: 18,
                                     ),
                                   ),

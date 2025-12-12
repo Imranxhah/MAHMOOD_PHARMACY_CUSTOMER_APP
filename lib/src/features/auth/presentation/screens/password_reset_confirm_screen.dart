@@ -12,10 +12,12 @@ class PasswordResetConfirmScreen extends StatefulWidget {
   const PasswordResetConfirmScreen({super.key, required this.email});
 
   @override
-  State<PasswordResetConfirmScreen> createState() => _PasswordResetConfirmScreenState();
+  State<PasswordResetConfirmScreen> createState() =>
+      _PasswordResetConfirmScreenState();
 }
 
-class _PasswordResetConfirmScreenState extends State<PasswordResetConfirmScreen> {
+class _PasswordResetConfirmScreenState
+    extends State<PasswordResetConfirmScreen> {
   final _formKey = GlobalKey<FormState>();
   final _otpController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -34,7 +36,7 @@ class _PasswordResetConfirmScreenState extends State<PasswordResetConfirmScreen>
       setState(() => _isLoading = false);
 
       if (success) {
-         ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text(AppStrings.passwordResetSuccess)),
         );
         Navigator.of(context).pushAndRemoveUntil(
@@ -56,7 +58,9 @@ class _PasswordResetConfirmScreenState extends State<PasswordResetConfirmScreen>
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
+        iconTheme: IconThemeData(
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -77,29 +81,31 @@ class _PasswordResetConfirmScreenState extends State<PasswordResetConfirmScreen>
                 Text(
                   "Enter the OTP sent to your email and your new password.",
                   style: AppDecorations.modernSubtitleStyle(context),
-                   textAlign: TextAlign.left,
+                  textAlign: TextAlign.left,
                 ),
                 const SizedBox(height: AppSizes.p48),
                 CustomTextField(
                   controller: _otpController,
                   label: AppStrings.otp,
                   prefixIcon: Icons.password_outlined,
-                  validator: (value) =>
-                      (value == null || value.isEmpty) ? AppStrings.enterOtp : null,
+                  validator: (value) => (value == null || value.isEmpty)
+                      ? AppStrings.enterOtp
+                      : null,
                 ),
                 const SizedBox(height: AppSizes.p20),
                 CustomPasswordField(
                   controller: _passwordController,
                   label: AppStrings.newPassword,
-                  validator: (value) =>
-                      (value == null || value.length < 8) ? AppStrings.passwordMinLength : null,
+                  validator: (value) => (value == null || value.length < 8)
+                      ? AppStrings.passwordMinLength
+                      : null,
                 ),
                 const SizedBox(height: AppSizes.p24),
                 CustomButton(
-                      text: AppStrings.resetPassword,
-                      onPressed: _confirmReset,
-                      isLoading: _isLoading,
-                    ),
+                  text: AppStrings.resetPassword,
+                  onPressed: _confirmReset,
+                  isLoading: _isLoading,
+                ),
                 const SizedBox(height: AppSizes.p20),
               ],
             ),

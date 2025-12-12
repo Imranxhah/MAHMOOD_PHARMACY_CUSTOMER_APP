@@ -32,7 +32,7 @@ class ProductModel {
         imageUrl = '${ApiConstants.mediaBaseUrl}/$imageUrl';
       }
     }
-    
+
     return ProductModel(
       id: json['id'],
       categoryName: json['category_name'] ?? '',

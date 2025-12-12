@@ -29,18 +29,19 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _apiClient.placeOrder(
-        {
-          "shipping_address": shippingAddress,
-          "contact_number": contactNumber,
-          "items": items,
-          if (branchId != null) "branch_id": branchId,
-          if (paymentMethod != null) "payment_method": paymentMethod,
-          "order_type": orderType,
-        },
-      );
+      final response = await _apiClient.placeOrder({
+        "shipping_address": shippingAddress,
+        "contact_number": contactNumber,
+        "items": items,
+        if (branchId != null) "branch_id": branchId,
+        if (paymentMethod != null) "payment_method": paymentMethod,
+        "order_type": orderType,
+      });
       if (response.statusCode == 201) {
-        _orders.insert(0, OrderModel.fromJson(response.data)); // Add new order to list
+        _orders.insert(
+          0,
+          OrderModel.fromJson(response.data),
+        ); // Add new order to list
         _selectedOrder = OrderModel.fromJson(response.data);
         return Future.value();
       }
@@ -71,16 +72,17 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _apiClient.quickOrder(
-        {
-          "product_id": productId,
-          "quantity": quantity,
-          if (shippingAddress != null) "shipping_address": shippingAddress,
-          if (contactNumber != null) "contact_number": contactNumber,
-        },
-      );
+      final response = await _apiClient.quickOrder({
+        "product_id": productId,
+        "quantity": quantity,
+        if (shippingAddress != null) "shipping_address": shippingAddress,
+        if (contactNumber != null) "contact_number": contactNumber,
+      });
       if (response.statusCode == 201) {
-        _orders.insert(0, OrderModel.fromJson(response.data)); // Add new order to list
+        _orders.insert(
+          0,
+          OrderModel.fromJson(response.data),
+        ); // Add new order to list
         _selectedOrder = OrderModel.fromJson(response.data);
         return Future.value();
       }
@@ -141,7 +143,9 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> validateCart(List<Map<String, dynamic>> cartItems) async {
+  Future<Map<String, dynamic>> validateCart(
+    List<Map<String, dynamic>> cartItems,
+  ) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -150,7 +154,10 @@ class OrderProvider with ChangeNotifier {
       final response = await _apiClient.validateCart(cartItems);
       _isLoading = false;
       notifyListeners();
-      return {'valid': response.data['valid'] ?? true, 'errors': response.data['errors'] ?? []};
+      return {
+        'valid': response.data['valid'] ?? true,
+        'errors': response.data['errors'] ?? [],
+      };
     } on DioException catch (e) {
       _isLoading = false;
       notifyListeners();
@@ -159,12 +166,18 @@ class OrderProvider with ChangeNotifier {
         return {'valid': false, 'errors': e.response!.data['errors']};
       }
       _error = e.response?.data['message'] ?? 'Failed to validate cart.';
-      return {'valid': false, 'errors': [_error]};
+      return {
+        'valid': false,
+        'errors': [_error],
+      };
     } catch (e) {
       _isLoading = false;
       notifyListeners();
       _error = 'An unexpected error occurred: $e';
-      return {'valid': false, 'errors': [_error]};
+      return {
+        'valid': false,
+        'errors': [_error],
+      };
     }
   }
 }

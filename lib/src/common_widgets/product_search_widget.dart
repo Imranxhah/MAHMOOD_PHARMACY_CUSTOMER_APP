@@ -9,7 +9,14 @@ class ProductSearchWidget extends StatefulWidget {
   final int? initialCategoryId;
   final String? initialSearch;
   final bool showFilters;
-  final Function(String search, int? categoryId, String? ordering, double? minPrice, double? maxPrice)? onSearchChanged;
+  final Function(
+    String search,
+    int? categoryId,
+    String? ordering,
+    double? minPrice,
+    double? maxPrice,
+  )?
+  onSearchChanged;
 
   const ProductSearchWidget({
     super.key,
@@ -47,9 +54,9 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
         _minPrice = null;
         _maxPrice = null;
         // Optionally clear search controller if you want a complete reset
-        // _searchController.clear(); 
+        // _searchController.clear();
       });
-      // We don't automatically fetch/apply filters here because the parent widget 
+      // We don't automatically fetch/apply filters here because the parent widget
       // (ProductListScreen) likely fetches products for the new categoryId in its own initState/update logic.
       // If we called _applyFilters() here, it might cause a double fetch.
     }
@@ -71,7 +78,13 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
       maxPrice: _maxPrice,
     );
     if (widget.onSearchChanged != null) {
-      widget.onSearchChanged!(_searchController.text, _selectedCategoryId, _selectedOrdering, _minPrice, _maxPrice);
+      widget.onSearchChanged!(
+        _searchController.text,
+        _selectedCategoryId,
+        _selectedOrdering,
+        _minPrice,
+        _maxPrice,
+      );
     }
   }
 
@@ -93,17 +106,37 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
                   Text(
                     "Sort By",
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.p20),
                   Wrap(
                     spacing: 8,
                     children: [
-                      _buildSortChip(context, "Newest", "-created_at", setModalState),
-                      _buildSortChip(context, "Price: Low to High", "price", setModalState),
-                      _buildSortChip(context, "Price: High to Low", "-price", setModalState),
-                      _buildSortChip(context, "Oldest", "created_at", setModalState),
+                      _buildSortChip(
+                        context,
+                        "Newest",
+                        "-created_at",
+                        setModalState,
+                      ),
+                      _buildSortChip(
+                        context,
+                        "Price: Low to High",
+                        "price",
+                        setModalState,
+                      ),
+                      _buildSortChip(
+                        context,
+                        "Price: High to Low",
+                        "-price",
+                        setModalState,
+                      ),
+                      _buildSortChip(
+                        context,
+                        "Oldest",
+                        "created_at",
+                        setModalState,
+                      ),
                     ],
                   ),
                   const SizedBox(height: AppSizes.p20),
@@ -133,8 +166,12 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
     }
 
     int? tempCategoryId = _selectedCategoryId;
-    TextEditingController minPriceController = TextEditingController(text: _minPrice?.toString());
-    TextEditingController maxPriceController = TextEditingController(text: _maxPrice?.toString());
+    TextEditingController minPriceController = TextEditingController(
+      text: _minPrice?.toString(),
+    );
+    TextEditingController maxPriceController = TextEditingController(
+      text: _maxPrice?.toString(),
+    );
 
     showModalBottomSheet(
       context: context,
@@ -160,9 +197,8 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
                       children: [
                         Text(
                           "Filters",
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         TextButton(
                           onPressed: () {
@@ -177,7 +213,10 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
                       ],
                     ),
                     const SizedBox(height: AppSizes.p20),
-                    Text("Category", style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      "Category",
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: AppSizes.p8),
                     Consumer<ProductProvider>(
                       builder: (context, provider, _) {
@@ -187,11 +226,18 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
                         return DropdownButtonFormField<int>(
                           value: tempCategoryId,
                           decoration: InputDecoration(
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
                             hintText: "Select Category",
                           ),
-                          items: provider.categories.map((CategoryModel category) {
+                          items: provider.categories.map((
+                            CategoryModel category,
+                          ) {
                             return DropdownMenuItem<int>(
                               value: category.id,
                               child: Text(category.name),
@@ -206,7 +252,10 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
                       },
                     ),
                     const SizedBox(height: AppSizes.p20),
-                    Text("Price Range", style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      "Price Range",
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: AppSizes.p8),
                     Row(
                       children: [
@@ -216,7 +265,9 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
                               labelText: "Min Price",
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ),
@@ -227,7 +278,9 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
                               labelText: "Max Price",
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ),
@@ -240,8 +293,12 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
                         onPressed: () {
                           setState(() {
                             _selectedCategoryId = tempCategoryId;
-                            _minPrice = double.tryParse(minPriceController.text);
-                            _maxPrice = double.tryParse(maxPriceController.text);
+                            _minPrice = double.tryParse(
+                              minPriceController.text,
+                            );
+                            _maxPrice = double.tryParse(
+                              maxPriceController.text,
+                            );
                           });
                           Navigator.pop(context);
                           _applyFilters();
@@ -259,7 +316,12 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
     );
   }
 
-  Widget _buildSortChip(BuildContext context, String label, String value, StateSetter setModalState) {
+  Widget _buildSortChip(
+    BuildContext context,
+    String label,
+    String value,
+    StateSetter setModalState,
+  ) {
     final isSelected = _selectedOrdering == value;
     return ChoiceChip(
       label: Text(label),
@@ -269,7 +331,7 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
           _selectedOrdering = selected ? value : null;
         });
         setState(() {
-           _selectedOrdering = selected ? value : null;
+          _selectedOrdering = selected ? value : null;
         });
       },
     );
@@ -289,9 +351,7 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: colorScheme.outline.withOpacity(0.1),
-            ),
+            border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
           ),
           child: TextField(
             controller: _searchController,
@@ -317,7 +377,7 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
             textInputAction: TextInputAction.search,
           ),
         ),
-        
+
         if (widget.showFilters) ...[
           const SizedBox(height: 12),
           // Filter & Sort Row
@@ -331,15 +391,15 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     side: BorderSide(
-                      color: _selectedOrdering != null 
-                          ? colorScheme.primary 
+                      color: _selectedOrdering != null
+                          ? colorScheme.primary
                           : colorScheme.outline.withOpacity(0.3),
                     ),
-                    backgroundColor: _selectedOrdering != null 
-                        ? colorScheme.primaryContainer.withOpacity(0.2) 
+                    backgroundColor: _selectedOrdering != null
+                        ? colorScheme.primaryContainer.withOpacity(0.2)
                         : null,
-                    foregroundColor: _selectedOrdering != null 
-                        ? colorScheme.primary 
+                    foregroundColor: _selectedOrdering != null
+                        ? colorScheme.primary
                         : colorScheme.onSurface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -351,20 +411,32 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _showFilterBottomSheet(context),
-                  icon: Icon(Icons.tune, size: 18), // Using tune icon for filter
+                  icon: Icon(
+                    Icons.tune,
+                    size: 18,
+                  ), // Using tune icon for filter
                   label: const Text("Filter"),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     side: BorderSide(
-                      color: (_selectedCategoryId != null || _minPrice != null || _maxPrice != null)
-                          ? colorScheme.primary 
+                      color:
+                          (_selectedCategoryId != null ||
+                              _minPrice != null ||
+                              _maxPrice != null)
+                          ? colorScheme.primary
                           : colorScheme.outline.withOpacity(0.3),
                     ),
-                    backgroundColor: (_selectedCategoryId != null || _minPrice != null || _maxPrice != null)
-                        ? colorScheme.primaryContainer.withOpacity(0.2) 
+                    backgroundColor:
+                        (_selectedCategoryId != null ||
+                            _minPrice != null ||
+                            _maxPrice != null)
+                        ? colorScheme.primaryContainer.withOpacity(0.2)
                         : null,
-                    foregroundColor: (_selectedCategoryId != null || _minPrice != null || _maxPrice != null)
-                        ? colorScheme.primary 
+                    foregroundColor:
+                        (_selectedCategoryId != null ||
+                            _minPrice != null ||
+                            _maxPrice != null)
+                        ? colorScheme.primary
                         : colorScheme.onSurface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

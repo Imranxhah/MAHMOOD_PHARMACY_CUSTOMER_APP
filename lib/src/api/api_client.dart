@@ -15,8 +15,8 @@ class ApiClient {
   }
 
   ApiClient._internal()
-      : _dio = Dio(),
-        _storageService = SecureStorageService() {
+    : _dio = Dio(),
+      _storageService = SecureStorageService() {
     _dio.options.baseUrl = _getBaseUrl();
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -29,7 +29,10 @@ class ApiClient {
         },
         onError: (DioException e, handler) async {
           if (e.response?.statusCode == 401) {
-            final code = e.response?.data['code']?.toString().trim().toLowerCase();
+            final code = e.response?.data['code']
+                ?.toString()
+                .trim()
+                .toLowerCase();
             // If the 401 is due to specific authentication issues, let it propagate
             if (code == 'unverified_user' || code == 'authentication_failed') {
               return handler.next(e);
@@ -40,12 +43,13 @@ class ApiClient {
               final newAccessToken = await _refreshToken();
               if (newAccessToken != null) {
                 // Update the failed request's header
-                e.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
+                e.requestOptions.headers['Authorization'] =
+                    'Bearer $newAccessToken';
                 // Retry the failed request
                 final response = await _dio.fetch(e.requestOptions);
                 return handler.resolve(response);
               } else {
-                 // If refresh fails, logout user
+                // If refresh fails, logout user
                 await _logout();
                 return handler.next(e);
               }
@@ -124,7 +128,8 @@ class ApiClient {
     final Map<String, dynamic> queryParams = {};
     if (search != null && search.isNotEmpty) queryParams['search'] = search;
     if (categoryId != null) queryParams['category'] = categoryId;
-    if (ordering != null && ordering.isNotEmpty) queryParams['ordering'] = ordering;
+    if (ordering != null && ordering.isNotEmpty)
+      queryParams['ordering'] = ordering;
     if (minPrice != null) queryParams['min_price'] = minPrice;
     if (maxPrice != null) queryParams['max_price'] = maxPrice;
 
@@ -134,7 +139,10 @@ class ApiClient {
   // --- Favorites Module ---
 
   Future<Response> toggleFavorite(int productId) async {
-    return await _dio.post('favorites/toggle/', data: {'product_id': productId});
+    return await _dio.post(
+      'favorites/toggle/',
+      data: {'product_id': productId},
+    );
   }
 
   Future<Response> getFavorites() async {
@@ -177,11 +185,7 @@ class ApiClient {
     return await _dio.post(
       'prescriptions/upload/',
       data: formData,
-      options: Options(
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      ),
+      options: Options(headers: {'Content-Type': 'multipart/form-data'}),
     );
   }
 
@@ -203,10 +207,10 @@ class ApiClient {
     required double latitude,
     required double longitude,
   }) async {
-    return await _dio.get('branches/nearest/', queryParameters: {
-      'lat': latitude,
-      'long': longitude,
-    });
+    return await _dio.get(
+      'branches/nearest/',
+      queryParameters: {'lat': latitude, 'long': longitude},
+    );
   }
 
   // --- Address Management Module ---
@@ -219,7 +223,10 @@ class ApiClient {
     return await _dio.post('addresses/', data: addressData);
   }
 
-  Future<Response> updateAddress(int id, Map<String, dynamic> addressData) async {
+  Future<Response> updateAddress(
+    int id,
+    Map<String, dynamic> addressData,
+  ) async {
     return await _dio.put('addresses/$id/', data: addressData);
   }
 

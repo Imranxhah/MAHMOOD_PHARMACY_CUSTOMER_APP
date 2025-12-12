@@ -5,11 +5,7 @@ class CategoryModel {
   final String name;
   final String? image;
 
-  CategoryModel({
-    required this.id,
-    required this.name,
-    this.image,
-  });
+  CategoryModel({required this.id, required this.name, this.image});
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     String? imageUrl = json['image'];
@@ -20,19 +16,11 @@ class CategoryModel {
         imageUrl = '${ApiConstants.mediaBaseUrl}/$imageUrl';
       }
     }
-    
-    return CategoryModel(
-      id: json['id'],
-      name: json['name'],
-      image: imageUrl,
-    );
+
+    return CategoryModel(id: json['id'], name: json['name'], image: imageUrl);
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'image': image,
-    };
+    return {'id': id, 'name': name, 'image': image};
   }
 }

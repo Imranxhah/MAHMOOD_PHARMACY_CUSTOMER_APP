@@ -34,12 +34,9 @@ class AuthProvider with ChangeNotifier {
     final accessToken = await _storageService.read('access');
     if (accessToken != null) {
       try {
-        if (!Jwt.isExpired(accessToken)) {
-          await _loadUser(accessToken);
-          _authStatus = AuthStatus.authenticated;
-        } else {
-           _authStatus = AuthStatus.unauthenticated;
-        }
+        await _loadUser(accessToken);
+        // If _loadUser succeeds (even after refresh), we are authenticated
+        _authStatus = AuthStatus.authenticated;
       } catch (e) {
         _authStatus = AuthStatus.unauthenticated;
       }
@@ -62,12 +59,12 @@ class AuthProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final accessToken = response.data['access'];
         final refreshToken = response.data['refresh'];
-        
+
         await Future.wait([
           _storageService.write('access', accessToken),
           _storageService.write('refresh', refreshToken),
         ]);
-        
+
         _loadUser(accessToken); // Fire and forget
         _authStatus = AuthStatus.authenticated;
         notifyListeners();
@@ -111,193 +108,160 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     return 'failed';
   }
-  
-  
-    Future<Map<String, dynamic>> register(String email, String password, String firstName, String lastName, String mobile) async {
-  
-  
-      _authStatus = AuthStatus.registering;
-  
-  
-      notifyListeners();
-  
-  
-  
-  
-  
-      try {
-  
-  
-        final response = await _apiClient.dio.post(
-  
-  
-          'auth/register/',
-  
-  
-          data: {
-  
-  
-            'email': email,
-  
-  
-            'password': password,
-  
-  
-            'first_name': firstName,
-  
-  
-            'last_name': lastName,
-  
-  
-            'mobile': mobile,
-  
-  
-          },
-  
-  
-        );
-  
-  
-        
-  
-  
-                        if (response.statusCode == 201) {
-  
-  
-        
-  
-  
-                          _authStatus = AuthStatus.unauthenticated;
-  
-  
-        
-  
-  
-                          notifyListeners();
-  
-  
-        
-  
-  
-                          return {'success': true, 'data': response.data};
-  
-  
-        
-  
-  
-                        }
-  
-  
-      } on DioException catch (e) {
-  
-  
-         if (e.response?.statusCode == 409 && e.response?.data['status'] == 'unverified') {
-  
-  
-          _authStatus = AuthStatus.unauthenticated;
-  
-  
-          notifyListeners();
-  
-  
-          return {'success': false, 'status': 'unverified', 'data': e.response!.data};
-  
-  
-         }
-  
-  
-         if (e.response?.statusCode == 400) { // Handle validation errors explicitly
-  
-  
-           return {'success': false, 'status': 'validation_error', 'data': e.response!.data};
-  
-  
-         }
-  
-  
-         if (e.response != null) {
-  
-  
-           return {'success': false, 'data': e.response!.data};
-  
-  
-         }
-  
-  
-         // If it's a DioException but not a specific 409 or 400
-  
-  
-         return {'success': false, 'data': 'An unknown error occurred (DioException)'};
-  
-  
+
+  Future<Map<String, dynamic>> register(
+    String email,
+    String password,
+    String firstName,
+    String lastName,
+    String mobile,
+  ) async {
+    _authStatus = AuthStatus.registering;
+
+    notifyListeners();
+
+    try {
+      final response = await _apiClient.dio.post(
+        'auth/register/',
+
+        data: {
+          'email': email,
+
+          'password': password,
+
+          'first_name': firstName,
+
+          'last_name': lastName,
+
+          'mobile': mobile,
+        },
+      );
+
+      if (response.statusCode == 201) {
+        _authStatus = AuthStatus.unauthenticated;
+
+        notifyListeners();
+
+        return {'success': true, 'data': response.data};
       }
-  
-  
-      // Any other non-DioException errors
-  
-  
-      return {'success': false, 'data': 'An unknown error occurred'};
-  
-  
-    }
-  
-  
-  
-  
-  
-    Future<Map<String, dynamic>> resendOtp(String email) async {
-      try {
-        final response = await _apiClient.dio.post(
-          'auth/resend-otp/',
-          data: {'email': email},
-        );
-        if (response.statusCode == 200) {
-          return {'success': true, 'message': response.data['message'] ?? 'OTP sent successfully.'};
-        }
-        return {'success': false, 'message': 'Failed to send OTP.'};
-      } on DioException catch (e) {
-        if (e.response?.statusCode == 400 && e.response?.data['message'] != null) {
-          return {'success': false, 'message': e.response!.data['message']};
-        }
-        if (e.response?.statusCode == 404 && e.response?.data['error'] != null) {
-          return {'success': false, 'message': e.response!.data['error']};
-        }
-        return {'success': false, 'message': 'Failed to resend OTP. Please try again.'};
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 409 &&
+          e.response?.data['status'] == 'unverified') {
+        _authStatus = AuthStatus.unauthenticated;
+
+        notifyListeners();
+
+        return {
+          'success': false,
+          'status': 'unverified',
+          'data': e.response!.data,
+        };
       }
+
+      if (e.response?.statusCode == 400) {
+        // Handle validation errors explicitly
+
+        return {
+          'success': false,
+          'status': 'validation_error',
+          'data': e.response!.data,
+        };
+      }
+
+      if (e.response != null) {
+        return {'success': false, 'data': e.response!.data};
+      }
+
+      // If it's a DioException but not a specific 409 or 400
+
+      return {
+        'success': false,
+        'data': 'An unknown error occurred (DioException)',
+      };
     }
-  
-    Future<Map<String, dynamic>> verifyOtp(String email, String otp) async {
+
+    // Any other non-DioException errors
+
+    return {'success': false, 'data': 'An unknown error occurred'};
+  }
+
+  Future<Map<String, dynamic>> resendOtp(String email) async {
+    try {
+      final response = await _apiClient.dio.post(
+        'auth/resend-otp/',
+        data: {'email': email},
+      );
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': response.data['message'] ?? 'OTP sent successfully.',
+        };
+      }
+      return {'success': false, 'message': 'Failed to send OTP.'};
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 400 &&
+          e.response?.data['message'] != null) {
+        return {'success': false, 'message': e.response!.data['message']};
+      }
+      if (e.response?.statusCode == 404 && e.response?.data['error'] != null) {
+        return {'success': false, 'message': e.response!.data['error']};
+      }
+      return {
+        'success': false,
+        'message': 'Failed to resend OTP. Please try again.',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> verifyOtp(String email, String otp) async {
     try {
       final response = await _apiClient.dio.post(
         'auth/verify/',
         data: {'email': email, 'otp_code': otp},
       );
       if (response.statusCode == 200) {
-        if (response.data != null && response.data['access'] != null && response.data['refresh'] != null) {
+        if (response.data != null &&
+            response.data['access'] != null &&
+            response.data['refresh'] != null) {
           final accessToken = response.data['access'];
           final refreshToken = response.data['refresh'];
-          
+
           await Future.wait([
             _storageService.write('access', accessToken),
             _storageService.write('refresh', refreshToken),
           ]);
-          
+
           _loadUser(accessToken); // Fire and forget
           _authStatus = AuthStatus.authenticated;
           notifyListeners();
-           return {'success': true, 'message': response.data['message'] ?? 'Account verified successfully.'};
+          return {
+            'success': true,
+            'message':
+                response.data['message'] ?? 'Account verified successfully.',
+          };
         } else {
           _authStatus = AuthStatus.unauthenticated;
           notifyListeners();
-          return {'success': true, 'message': response.data['message'] ?? 'Account verified successfully.'};
+          return {
+            'success': true,
+            'message':
+                response.data['message'] ?? 'Account verified successfully.',
+          };
         }
       }
       return {'success': false, 'message': 'Verification failed.'};
     } on DioException catch (e) {
-      if (e.response?.statusCode == 400 && e.response?.data['non_field_errors'] != null) {
-        return {'success': false, 'message': e.response!.data['non_field_errors'][0]};
+      if (e.response?.statusCode == 400 &&
+          e.response?.data['non_field_errors'] != null) {
+        return {
+          'success': false,
+          'message': e.response!.data['non_field_errors'][0],
+        };
       }
-      return {'success': false, 'message': 'OTP verification failed. Please try again.'};
+      return {
+        'success': false,
+        'message': 'OTP verification failed. Please try again.',
+      };
     }
   }
 
@@ -308,20 +272,20 @@ class AuthProvider with ChangeNotifier {
     _authStatus = AuthStatus.unauthenticated;
     notifyListeners();
   }
-  
+
   Future<void> _loadUser(String token) async {
-      Map<String, dynamic> payload = Jwt.parseJwt(token);
-      _isAdmin = payload['is_staff'] ?? false;
-      // After login, we can fetch user profile
-      try {
-        final response = await _apiClient.dio.get('users/profile/');
-        if (response.statusCode == 200) {
-          _user = User.fromJson(response.data);
-          notifyListeners();
-        }
-      } catch (e) {
-        // Handle error, maybe logout user
+    Map<String, dynamic> payload = Jwt.parseJwt(token);
+    _isAdmin = payload['is_staff'] ?? false;
+    // After login, we can fetch user profile
+    try {
+      final response = await _apiClient.dio.get('users/profile/');
+      if (response.statusCode == 200) {
+        _user = User.fromJson(response.data);
+        notifyListeners();
       }
+    } catch (e) {
+      // Handle error, maybe logout user
+    }
   }
 
   // Password Reset Methods
@@ -337,7 +301,11 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> confirmPasswordReset(String email, String otp, String newPassword) async {
+  Future<bool> confirmPasswordReset(
+    String email,
+    String otp,
+    String newPassword,
+  ) async {
     try {
       final response = await _apiClient.dio.post(
         'auth/password/reset/confirm/',
@@ -354,12 +322,12 @@ class AuthProvider with ChangeNotifier {
           if (loginResponse.statusCode == 200) {
             final accessToken = loginResponse.data['access'];
             final refreshToken = loginResponse.data['refresh'];
-            
+
             await Future.wait([
               _storageService.write('access', accessToken),
               _storageService.write('refresh', refreshToken),
             ]);
-            
+
             _loadUser(accessToken); // Fire and forget
             _authStatus = AuthStatus.authenticated;
             notifyListeners();
@@ -370,7 +338,9 @@ class AuthProvider with ChangeNotifier {
             return false; // Password reset successful, but auto-login failed
           }
         } on DioException catch (loginError) {
-          debugPrint('Auto-login after password reset failed: ${loginError.response?.data}');
+          debugPrint(
+            'Auto-login after password reset failed: ${loginError.response?.data}',
+          );
           _authStatus = AuthStatus.unauthenticated;
           notifyListeners();
           return false; // Password reset successful, but auto-login failed due to error
@@ -386,10 +356,7 @@ class AuthProvider with ChangeNotifier {
   // Profile Methods
   Future<bool> updateProfile(Map<String, String> data) async {
     try {
-      final response = await _apiClient.dio.patch(
-        'users/profile/',
-        data: data,
-      );
+      final response = await _apiClient.dio.patch('users/profile/', data: data);
       if (response.statusCode == 200) {
         _user = User.fromJson(response.data);
         notifyListeners();
@@ -413,17 +380,21 @@ class AuthProvider with ChangeNotifier {
       rethrow;
     } catch (e) {
       // Re-throw other exceptions as a generic exception
-      throw Exception('An unexpected error occurred during password change: $e');
+      throw Exception(
+        'An unexpected error occurred during password change: $e',
+      );
     }
   }
 
-    // Admin Methods
+  // Admin Methods
   Future<List<User>> getAllUsers() async {
     if (!_isAdmin) return [];
     try {
       final response = await _apiClient.dio.get('users/');
       if (response.statusCode == 200) {
-        return (response.data as List).map((userJson) => User.fromJson(userJson)).toList();
+        return (response.data as List)
+            .map((userJson) => User.fromJson(userJson))
+            .toList();
       }
     } catch (e) {
       // handle error
