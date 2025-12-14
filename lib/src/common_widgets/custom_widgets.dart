@@ -131,23 +131,23 @@ class CustomTextField extends StatelessWidget {
         helperText: helperText,
         prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
         suffixIcon: suffixIcon,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)), // Changed to 16
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16), // Changed to 16
           borderSide: BorderSide(
             color: Theme.of(context).dividerColor,
             width: 1.5,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16), // Changed to 16
           borderSide: BorderSide(
             color: Theme.of(context).primaryColor,
             width: 2,
           ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16), // Changed to 16
           borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(

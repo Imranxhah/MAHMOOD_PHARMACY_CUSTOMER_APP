@@ -28,6 +28,7 @@ abstract final class AppTheme {
       tintedDisabledControls: true,
       inputDecoratorIsFilled: true,
       inputDecoratorBorderType: FlexInputBorderType.outline,
+      inputDecoratorRadius: 16, // Added inputDecoratorRadius
       alignedDropdown: true,
       navigationRailUseIndicator: true,
     ),
@@ -49,6 +50,7 @@ abstract final class AppTheme {
       blendOnColors: true,
       inputDecoratorIsFilled: true,
       inputDecoratorBorderType: FlexInputBorderType.outline,
+      inputDecoratorRadius: 16, // Added inputDecoratorRadius
       alignedDropdown: true,
       navigationRailUseIndicator: true,
     ),

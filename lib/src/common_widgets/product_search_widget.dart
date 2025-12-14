@@ -366,7 +366,20 @@ class _ProductSearchWidgetState extends State<ProductSearchWidget> {
                 color: colorScheme.onSurfaceVariant,
                 size: 22,
               ),
-              border: InputBorder.none,
+              filled: true,
+              fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.5), // Match Container's color
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none, // No visible border
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none, // No visible border
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none, // No visible border
+              ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 12,

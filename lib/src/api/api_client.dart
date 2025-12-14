@@ -92,7 +92,9 @@ class ApiClient {
 
       if (response.statusCode == 200) {
         final newAccessToken = response.data['access'];
+        final newRefreshToken = response.data['refresh'];
         await _storageService.write('access', newAccessToken);
+        await _storageService.write('refresh', newRefreshToken);
         return newAccessToken;
       }
     } catch (e) {
@@ -116,6 +118,10 @@ class ApiClient {
 
   Future<Response> getHomeData() async {
     return await _dio.get('products/home/');
+  }
+
+  Future<Response> getBanners() async {
+    return await _dio.get('marketing/banners/');
   }
 
   Future<Response> getProducts({
@@ -163,9 +169,11 @@ class ApiClient {
     return await _dio.get('orders/$orderId/');
   }
 
-  Future<Response> quickOrder(Map<String, dynamic> orderData) async {
-    return await _dio.post('orders/quick-order/', data: orderData);
+  Future<Response> cancelOrder(int orderId) async {
+    return await _dio.post('orders/$orderId/cancel_order/');
   }
+
+
 
   Future<Response> validateCart(List<Map<String, dynamic>> cartItems) async {
     return await _dio.post('cart/validate/', data: {'items': cartItems});
@@ -232,6 +240,10 @@ class ApiClient {
 
   Future<Response> deleteAddress(int id) async {
     return await _dio.delete('addresses/$id/');
+  }
+  
+  Future<Response> deleteOrder(int orderId) async {
+    return await _dio.delete('orders/$orderId/');
   }
 
   // --- Auth Module (Password) ---

@@ -8,7 +8,8 @@ import 'src/providers/cart_provider.dart';
 import 'src/providers/prescription_provider.dart';
 import 'src/providers/branch_provider.dart';
 import 'src/providers/address_provider.dart';
-import 'src/providers/theme_provider.dart'; // Import ThemeProvider
+import 'src/providers/theme_provider.dart';
+import 'src/providers/banner_provider.dart'; // Import BannerProvider
 import 'src/features/auth/presentation/screens/welcome_screen.dart';
 import 'src/features/splash/presentation/splash_screen.dart'; // Import SplashScreen
 import 'src/features/home/presentation/main_screen.dart'; // Keep MainScreen import if needed elsewhere or redundant
@@ -31,6 +32,7 @@ class MahmoodPharmacyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PrescriptionProvider()),
         ChangeNotifierProvider(create: (_) => BranchProvider()),
         ChangeNotifierProvider(create: (_) => AddressProvider()),
+        ChangeNotifierProvider(create: (_) => BannerProvider()), // Add BannerProvider
         ChangeNotifierProvider(
           create: (_) => ThemeProvider(),
         ), // Add ThemeProvider

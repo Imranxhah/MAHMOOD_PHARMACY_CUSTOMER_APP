@@ -108,6 +108,8 @@ class AppStrings {
   // Order History
   static const String orderHistory = 'Order History';
   static const String orderPrefix = 'Order #';
+  static const String pending = 'Pending';
+  static const String cancelled = 'Cancelled';
   static const String processing = 'Processing';
   static const String delivered = 'Delivered';
   static const String datePrefix = 'Date: ';

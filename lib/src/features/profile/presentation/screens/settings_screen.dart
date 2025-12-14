@@ -11,6 +11,7 @@ import 'package:customer_app/src/features/admin/presentation/screens/user_list_s
 import 'package:customer_app/src/features/profile/presentation/screens/my_prescriptions_screen.dart';
 import 'package:customer_app/src/features/branches/presentation/screens/branches_screen.dart';
 import 'package:customer_app/src/features/profile/presentation/screens/address_list_screen.dart';
+import 'package:customer_app/src/features/profile/presentation/order_history_screen.dart';
 import 'package:customer_app/src/features/profile/presentation/screens/change_password_screen.dart'; // Import ChangePasswordScreen
 
 class SettingsScreen extends StatelessWidget {
@@ -57,6 +58,16 @@ class SettingsScreen extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (_) => const EditProfileScreen(),
+                          ),
+                        ),
+                      ),
+                      _MenuItem(
+                        icon: Icons.history,
+                        title: AppStrings.orderHistory,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const OrderHistoryScreen(),
                           ),
                         ),
                       ),

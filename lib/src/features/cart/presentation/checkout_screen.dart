@@ -5,8 +5,10 @@ import 'package:customer_app/src/providers/order_provider.dart';
 import 'package:customer_app/src/providers/cart_provider.dart';
 import 'package:customer_app/src/providers/branch_provider.dart';
 import 'package:customer_app/src/providers/address_provider.dart'; // Import AddressProvider
+import 'package:customer_app/src/features/profile/presentation/screens/address_list_screen.dart'; // Import AddressListScreen
 import 'package:customer_app/src/models/branch_model.dart';
 import 'package:customer_app/src/models/address_model.dart'; // Import AddressModel
+import 'package:customer_app/src/features/profile/presentation/order_history_screen.dart'; // Import OrderHistoryScreen
 import '../../../constants/app_sizes.dart';
 import '../../../constants/app_strings.dart';
 import '../../../common_widgets/custom_widgets.dart';
@@ -46,12 +48,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       _selectedOrderType = "Quick";
     }
     _validateCartItems();
-    // Default values for address/contact for now, user can fill these later.
-    _shippingAddressController.text = "123 Main Street, New York, NY";
-    _contactNumberController.text = "+1234567890";
-
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<BranchProvider>(context, listen: false).listBranches();
+      Provider.of<BranchProvider>(context, listen: false).fetchLocationAndData();
       Provider.of<AddressProvider>(
         context,
         listen: false,
@@ -116,11 +115,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    // Branch selection is mandatory only if it's a "Normal" order type or if using Normal endpoint logic
-    // If using Quick endpoint, branch might not be supported.
-    // If widget.isBuyNow is false, we ALWAYS use placeOrder (Normal endpoint), so Branch is likely needed unless Quick Type implies no branch?
-    // Assuming Branch is required for Normal Endpoint regardless of type string.
-    if (!widget.isBuyNow && _selectedBranch == null) {
+    if (_selectedBranch == null) {
       _showErrorDialog("Missing Information", "Please select a branch.");
       return;
     }
@@ -135,26 +130,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final paymentMethod = _selectedPaymentIndex == 0 ? "COD" : "PAYED";
 
     try {
-      if (widget.isBuyNow && _selectedOrderType == "Quick") {
-        // Use Quick Order Endpoint
-        final item = widget.cartItems.first;
-        await orderProvider.quickOrder(
-          productId: int.parse(item['product_id'].toString()),
-          quantity: int.parse(item['quantity'].toString()),
-          shippingAddress: _shippingAddressController.text,
-          contactNumber: _contactNumberController.text,
-        );
-      } else {
-        // Use Normal Order Endpoint (even if BuyNow but selected "Normal" type, or Cart)
-        await orderProvider.placeOrder(
-          shippingAddress: _shippingAddressController.text,
-          contactNumber: _contactNumberController.text,
-          items: widget.cartItems,
-          branchId: _selectedBranch?.id,
-          paymentMethod: paymentMethod,
-          orderType: _selectedOrderType,
-        );
-      }
+      // Unify order placement to always use orderProvider.placeOrder
+      await orderProvider.placeOrder(
+        shippingAddress: _shippingAddressController.text,
+        contactNumber: _contactNumberController.text,
+        items: widget.cartItems, // This will contain one item for buy now, multiple for cart
+        branchId: _selectedBranch?.id,
+        paymentMethod: paymentMethod,
+        orderType: _selectedOrderType, // Keep this for now, it's just a string in payload
+      );
 
       if (!mounted) return;
 
@@ -163,12 +147,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             .clearCart(); // Clear cart after successful order only if not Buy Now
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.orderPlacedSuccess)),
-      );
       Navigator.of(
         context,
-      ).popUntil((route) => route.isFirst); // Navigate back to main screen
+      ).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
+        (route) => route.isFirst,
+      );
     } on DioException catch (e) {
       String errorMessage =
           e.response?.data['error'] ?? 'Failed to place order.';
@@ -279,6 +263,43 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                         );
                       }
+                      
+                      // Check if addresses are empty and not loading
+                      if (addressProvider.addresses.isEmpty &&
+                          !addressProvider.isLoading) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "No saved addresses found.",
+                              style: TextStyle(fontStyle: FontStyle.italic),
+                            ),
+                            const SizedBox(height: AppSizes.p8),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          const AddressListScreen()),
+                                );
+                              },
+                              icon: const Icon(Icons.add_location_alt),
+                              label: const Text("Add New Address"),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(AppSizes.radius8),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSizes.p16),
+                          ],
+                        );
+                      }
+
                       return DropdownButtonFormField<AddressModel>(
                         value: _selectedAddress,
                         decoration: InputDecoration(
@@ -317,7 +338,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                   // Address Section
                   Text(
-                    AppStrings.shippingAddress,
+                    "Enter your shipping address",
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -325,14 +346,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   const SizedBox(height: AppSizes.p12),
                   CustomTextField(
                     controller: _shippingAddressController,
-                    hint: "Enter your shipping address",
+                    hint: "e.g., House No. 123, Street 45, City",
                     validator: (value) =>
                         value!.isEmpty ? "Address cannot be empty" : null,
                   ),
                   const SizedBox(height: AppSizes.p12),
                   CustomTextField(
                     controller: _contactNumberController,
-                    hint: "Enter your contact number",
+                    hint: "e.g., 03001234567",
                     keyboardType: TextInputType.phone,
                     validator: (value) => value!.isEmpty
                         ? "Contact number cannot be empty"
@@ -340,61 +361,82 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   const SizedBox(height: AppSizes.p24),
 
-                  // Branch Section (Only if Order Type is Normal)
-                  if (_selectedOrderType == "Normal") ...[
-                    Text(
-                      "Select Branch",
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  // Branch Section
+                  // Branch selection is now always visible as per user request
+                  Text(
+                    "Select Nearest Branch",
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: AppSizes.p12),
-                    Consumer<BranchProvider>(
-                      builder: (context, branchProvider, child) {
-                        if (branchProvider.isLoading) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        if (branchProvider.error != null) {
-                          return Text(
-                            branchProvider.error!,
-                            style: const TextStyle(color: Colors.red),
-                          );
-                        }
-                        return DropdownButtonFormField<BranchModel>(
-                          value: _selectedBranch,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                          ),
-                          hint: const Text("Choose a branch"),
-                          isExpanded: true, // Prevent overflow
-                          items: branchProvider.branches.map((branch) {
-                            return DropdownMenuItem<BranchModel>(
-                              value: branch,
-                              child: Text(
-                                branch.name,
-                                overflow: TextOverflow
-                                    .ellipsis, // Handle text overflow
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedBranch = value;
-                            });
-                          },
+                  ),
+                  const SizedBox(height: AppSizes.p12),
+                  Consumer<BranchProvider>(
+                    builder: (context, branchProvider, child) {
+                      if (branchProvider.isLoading ||
+                          branchProvider.isLocationLoading) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
                         );
-                      },
-                    ),
-                    const SizedBox(height: AppSizes.p24),
-                  ],
+                      }
+                      if (branchProvider.locationError != null) {
+                        return Text(
+                          "Location Error: ${branchProvider.locationError!}",
+                          style: const TextStyle(color: Colors.red),
+                        );
+                      }
+                      if (branchProvider.error != null) {
+                        return Text(
+                          "Branch Error: ${branchProvider.error!}",
+                          style: const TextStyle(color: Colors.red),
+                        );
+                      }
+                      if (branchProvider.foundBranches.isEmpty) {
+                        return const Text(
+                            "No branches found near your location.");
+                      }
+
+                      // Auto-select the first nearest branch if none is selected
+                      if (_selectedBranch == null &&
+                          branchProvider.foundBranches.isNotEmpty) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          setState(() {
+                            _selectedBranch = branchProvider.foundBranches.first;
+                          });
+                        });
+                      }
+
+                      return DropdownButtonFormField<BranchModel>(
+                        value: _selectedBranch,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        hint: const Text("Choose a branch"),
+                        isExpanded: true, // Prevent overflow
+                        items: branchProvider.foundBranches.map((branch) {
+                          return DropdownMenuItem<BranchModel>(
+                            value: branch,
+                            child: Text(
+                              "${branch.name} (${branch.distanceKm?.toStringAsFixed(1)} km)",
+                              overflow: TextOverflow
+                                  .ellipsis, // Handle text overflow
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedBranch = value;
+                          });
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(height: AppSizes.p24),
 
                   // Payment Method
                   Text(

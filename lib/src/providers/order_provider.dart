@@ -6,13 +6,14 @@ import 'package:customer_app/src/models/order_model.dart';
 class OrderProvider with ChangeNotifier {
   final ApiClient _apiClient = ApiClient();
 
-  List<OrderModel> _orders = [];
-  OrderModel? _selectedOrder;
+  List<Order> _orders = [];
+  Order? _selectedOrder;
   bool _isLoading = false;
+  bool _isOrdersLoaded = false;
   String? _error;
 
-  List<OrderModel> get orders => _orders;
-  OrderModel? get selectedOrder => _selectedOrder;
+  List<Order> get orders => _orders;
+  Order? get selectedOrder => _selectedOrder;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -40,9 +41,9 @@ class OrderProvider with ChangeNotifier {
       if (response.statusCode == 201) {
         _orders.insert(
           0,
-          OrderModel.fromJson(response.data),
+          Order.fromJson(response.data),
         ); // Add new order to list
-        _selectedOrder = OrderModel.fromJson(response.data);
+        _selectedOrder = Order.fromJson(response.data);
         return Future.value();
       }
     } on DioException catch (e) {
@@ -61,48 +62,11 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
-  Future<void> quickOrder({
-    required int productId,
-    required int quantity,
-    String? shippingAddress, // Optional, API will use default if not provided
-    String? contactNumber, // Optional
-  }) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
 
-    try {
-      final response = await _apiClient.quickOrder({
-        "product_id": productId,
-        "quantity": quantity,
-        if (shippingAddress != null) "shipping_address": shippingAddress,
-        if (contactNumber != null) "contact_number": contactNumber,
-      });
-      if (response.statusCode == 201) {
-        _orders.insert(
-          0,
-          OrderModel.fromJson(response.data),
-        ); // Add new order to list
-        _selectedOrder = OrderModel.fromJson(response.data);
-        return Future.value();
-      }
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 400 && e.response?.data['error'] != null) {
-        _error = e.response!.data['error'];
-      } else {
-        _error = e.response?.data['message'] ?? 'Failed to place quick order.';
-      }
-      rethrow;
-    } catch (e) {
-      _error = 'An unexpected error occurred: $e';
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
 
-  Future<void> listOrders() async {
+  Future<void> listOrders({bool forceRefresh = false}) async {
+    if (_isOrdersLoaded && !forceRefresh) return;
+
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -111,7 +75,8 @@ class OrderProvider with ChangeNotifier {
       final response = await _apiClient.listOrders();
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        _orders = data.map((json) => OrderModel.fromJson(json)).toList();
+        _orders = data.map((json) => Order.fromJson(json)).toList();
+        _isOrdersLoaded = true;
       }
     } on DioException catch (e) {
       _error = e.response?.data['message'] ?? 'Failed to load orders.';
@@ -124,6 +89,17 @@ class OrderProvider with ChangeNotifier {
   }
 
   Future<void> getOrderDetail(int orderId) async {
+    // Check if order exists locally first
+    try {
+      final localOrder = _orders.firstWhere((o) => o.id == orderId);
+      _selectedOrder = localOrder;
+      notifyListeners();
+      // Optionally fetch fresh data in background if needed, but for now we rely on cache
+      return; 
+    } catch (_) {
+      // Order not found locally, proceed to fetch
+    }
+
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -131,10 +107,59 @@ class OrderProvider with ChangeNotifier {
     try {
       final response = await _apiClient.getOrderDetail(orderId);
       if (response.statusCode == 200) {
-        _selectedOrder = OrderModel.fromJson(response.data);
+        _selectedOrder = Order.fromJson(response.data);
       }
     } on DioException catch (e) {
       _error = e.response?.data['message'] ?? 'Failed to load order details.';
+    } catch (e) {
+      _error = 'An unexpected error occurred: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> cancelOrder(int orderId) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiClient.cancelOrder(orderId);
+      if (response.statusCode == 200) {
+        // Update local status instead of refetching
+        final index = _orders.indexWhere((o) => o.id == orderId);
+        if (index != -1) {
+          final updatedOrder = _orders[index].copyWith(status: 'Cancelled');
+          _orders[index] = updatedOrder;
+          
+          if (_selectedOrder != null && _selectedOrder!.id == orderId) {
+            _selectedOrder = updatedOrder;
+          }
+        }
+      }
+    } on DioException catch (e) {
+      _error = e.response?.data['message'] ?? 'Failed to cancel order.';
+    } catch (e) {
+      _error = 'An unexpected error occurred: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteOrder(int orderId) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiClient.deleteOrder(orderId);
+      if (response.statusCode == 204) { // 204 No Content is typical for successful DELETE
+        _orders.removeWhere((order) => order.id == orderId);
+      }
+    } on DioException catch (e) {
+      _error = e.response?.data['message'] ?? 'Failed to delete order.';
     } catch (e) {
       _error = 'An unexpected error occurred: $e';
     } finally {
