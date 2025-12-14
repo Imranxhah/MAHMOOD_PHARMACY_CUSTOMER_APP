@@ -93,6 +93,7 @@ class CustomTextField extends StatelessWidget {
   final int? maxLength;
   final bool enabled;
   final bool readOnly;
+  final List<TextInputFormatter>? inputFormatters; // Added inputFormatters
 
   const CustomTextField({
     super.key,
@@ -110,6 +111,7 @@ class CustomTextField extends StatelessWidget {
     this.maxLength,
     this.enabled = true,
     this.readOnly = false,
+    this.inputFormatters, // Added inputFormatters
   });
 
   @override
@@ -124,6 +126,7 @@ class CustomTextField extends StatelessWidget {
       maxLength: maxLength,
       enabled: enabled,
       readOnly: readOnly,
+      inputFormatters: inputFormatters, // Pass inputFormatters
       style: const TextStyle(fontSize: 15),
       decoration: InputDecoration(
         labelText: label,

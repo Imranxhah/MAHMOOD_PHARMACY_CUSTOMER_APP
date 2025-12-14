@@ -120,6 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
       snap: true,
       elevation: isScrolled ? 2 : 0,
       backgroundColor: isDark ? colorScheme.surface : colorScheme.primary,
+      automaticallyImplyLeading: false, // Remove the back button
       systemOverlayStyle: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
@@ -136,10 +137,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   : Colors.white.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              Icons.local_pharmacy_rounded,
+            child: Image.asset(
+              'assets/images/home_screen_app_bar.png',
+              height: 24, // Matches the previous icon size
+              width: 24,
+              // Optional: If you want to tint the PNG to match the text color
+              // (like an icon), keep this line. If you want the original PNG colors, remove it.
               color: isDark ? colorScheme.primary : Colors.white,
-              size: 24,
             ),
           ),
           gapW12,
@@ -677,60 +681,42 @@ class _PromotionalBannerState extends State<PromotionalBanner> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
+        color: widget.isDark
+            ? theme.colorScheme.surfaceContainerHighest
+            : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(widget.isDark ? 0.3 : 0.15),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.network(
-              banner.image,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                color: theme.colorScheme.errorContainer,
-                child: Icon(
-                  Icons.broken_image_rounded,
-                  size: 48,
-                  color: theme.colorScheme.error,
+        clipBehavior: Clip.antiAlias,
+        child: Image.network(
+          banner.image,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            color: theme.colorScheme.errorContainer,
+            child: Icon(
+              Icons.broken_image_rounded,
+              size: 48,
+              color: theme.colorScheme.error,
+            ),
+          ),
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              color: widget.isDark
+                  ? theme.colorScheme.surfaceContainerHighest
+                  : const Color.fromARGB(255, 255, 255, 255),
+              child: Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                      : null,
+                  strokeWidth: 2,
                 ),
               ),
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  color: widget.isDark
-                      ? theme.colorScheme.surfaceContainerHighest
-                      : const Color.fromARGB(255, 255, 255, 255),
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                          : null,
-                      strokeWidth: 2,
-                    ),
-                  ),
-                );
-              },
-            ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.3)],
-                  stops: const [0.7, 1.0],
-                ),
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

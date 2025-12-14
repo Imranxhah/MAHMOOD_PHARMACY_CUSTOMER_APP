@@ -183,11 +183,13 @@ class ApiClient {
 
   Future<Response> uploadPrescription({
     required File image,
+    required String contactNumber,
     String? notes,
   }) async {
     String fileName = image.path.split('/').last;
     FormData formData = FormData.fromMap({
       "image": await MultipartFile.fromFile(image.path, filename: fileName),
+      "contact_number": contactNumber,
       if (notes != null) "notes": notes,
     });
     return await _dio.post(

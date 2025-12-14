@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:customer_app/src/providers/auth_provider.dart';
+import 'package:customer_app/src/providers/product_provider.dart'; // Import ProductProvider
 import 'package:customer_app/src/constants/app_sizes.dart';
 import 'package:customer_app/src/constants/app_strings.dart';
 import 'package:flutter/services.dart'; // Import for FilteringTextInputFormatter
@@ -97,6 +98,8 @@ class _OTPScreenState extends State<OTPScreen> {
               ),
             ),
           );
+          // Fetch home data immediately
+          Provider.of<ProductProvider>(context, listen: false).fetchHomeData();
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const MainScreen()),
             (Route<dynamic> route) => false, // Remove all routes below
@@ -120,6 +123,11 @@ class _OTPScreenState extends State<OTPScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text(AppStrings.loginSuccess)),
             );
+            // Fetch home data immediately
+            Provider.of<ProductProvider>(
+              context,
+              listen: false,
+            ).fetchHomeData();
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => const MainScreen()),
               (Route<dynamic> route) => false, // Remove all routes below

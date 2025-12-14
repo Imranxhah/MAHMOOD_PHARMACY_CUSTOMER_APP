@@ -2,6 +2,7 @@ import 'package:customer_app/src/features/auth/presentation/screens/otp_screen.d
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:customer_app/src/providers/auth_provider.dart';
+import 'package:customer_app/src/providers/product_provider.dart'; // Import ProductProvider
 import 'package:customer_app/src/constants/app_sizes.dart';
 import 'package:customer_app/src/constants/app_strings.dart';
 import 'package:customer_app/src/features/home/presentation/main_screen.dart';
@@ -38,6 +39,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
       switch (result) {
         case 'success':
+          // Fetch home data immediately after successful login
+          Provider.of<ProductProvider>(context, listen: false).fetchHomeData();
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const MainScreen()),
           );

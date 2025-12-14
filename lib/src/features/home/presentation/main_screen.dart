@@ -103,8 +103,8 @@ class _MainScreenState extends State<MainScreen> {
             ),
             // Prescriptions - Index 1
             const BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long_outlined),
-              activeIcon: Icon(Icons.receipt_long),
+              icon: Icon(Icons.camera_alt_outlined),
+              activeIcon: Icon(Icons.camera_alt),
               label: "Prescriptions",
             ),
             // Home - Index 2

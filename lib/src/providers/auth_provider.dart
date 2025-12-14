@@ -65,7 +65,7 @@ class AuthProvider with ChangeNotifier {
           _storageService.write('refresh', refreshToken),
         ]);
 
-        _loadUser(accessToken); // Fire and forget
+        await _loadUser(accessToken);
         _authStatus = AuthStatus.authenticated;
         notifyListeners();
         return 'success';
@@ -231,7 +231,7 @@ class AuthProvider with ChangeNotifier {
             _storageService.write('refresh', refreshToken),
           ]);
 
-          _loadUser(accessToken); // Fire and forget
+          await _loadUser(accessToken);
           _authStatus = AuthStatus.authenticated;
           notifyListeners();
           return {
@@ -274,17 +274,32 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> _loadUser(String token) async {
-    Map<String, dynamic> payload = Jwt.parseJwt(token);
-    _isAdmin = payload['is_staff'] ?? false;
-    // After login, we can fetch user profile
     try {
+      Map<String, dynamic> payload = Jwt.parseJwt(token);
+      _isAdmin = payload['is_staff'] ?? false;
       final response = await _apiClient.dio.get('users/profile/');
       if (response.statusCode == 200) {
         _user = User.fromJson(response.data);
-        notifyListeners();
+      } else {
+        // If profile fetch fails for some reason (e.g., 404, 500), treat as unauthenticated
+        _user = null;
+        _authStatus = AuthStatus.unauthenticated;
+        await _storageService.deleteAll(); // Clear tokens if profile not found/accessible
       }
+    } on DioException catch (e) {
+      // Specific handling for Dio errors (e.g., network issues, 401 on profile fetch)
+      _user = null;
+      _authStatus = AuthStatus.unauthenticated;
+      await _storageService.deleteAll(); // Clear tokens
+      debugPrint('Failed to load user profile: ${e.message}');
     } catch (e) {
-      // Handle error, maybe logout user
+      // Generic error handling
+      _user = null;
+      _authStatus = AuthStatus.unauthenticated;
+      await _storageService.deleteAll(); // Clear tokens
+      debugPrint('An unexpected error occurred while loading user profile: $e');
+    } finally {
+      notifyListeners(); // Always notify listeners after attempting to load user
     }
   }
 
@@ -328,7 +343,7 @@ class AuthProvider with ChangeNotifier {
               _storageService.write('refresh', refreshToken),
             ]);
 
-            _loadUser(accessToken); // Fire and forget
+            await _loadUser(accessToken);
             _authStatus = AuthStatus.authenticated;
             notifyListeners();
             return true; // Password reset and auto-login successful

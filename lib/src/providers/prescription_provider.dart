@@ -16,7 +16,11 @@ class PrescriptionProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<void> uploadPrescription({required File image, String? notes}) async {
+  Future<void> uploadPrescription({
+    required File image,
+    required String contactNumber,
+    String? notes,
+  }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -24,6 +28,7 @@ class PrescriptionProvider with ChangeNotifier {
     try {
       final response = await _apiClient.uploadPrescription(
         image: image,
+        contactNumber: contactNumber,
         notes: notes,
       );
       if (response.statusCode == 201) {

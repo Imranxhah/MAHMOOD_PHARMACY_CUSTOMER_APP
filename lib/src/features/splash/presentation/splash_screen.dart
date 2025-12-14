@@ -205,34 +205,16 @@ class _SplashScreenState extends State<SplashScreen>
             opacity: _fadeAnimation,
             child: ScaleTransition(
               scale: _scaleAnimation,
-              child: Container(
+              child: SizedBox(
                 width: 140,
                 height: 140,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      colorScheme.primary,
-                      colorScheme.primary.withOpacity(0.7),
-                      colorScheme.primaryContainer,
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.primary.withOpacity(0.3),
-                      blurRadius: 30,
-                      spreadRadius: 5,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
                 child: Center(
-                  child: Icon(
-                    Icons.local_pharmacy_rounded,
-                    size: 70,
-                    color: colorScheme.onPrimary,
+                  child: Image.asset(
+                    'assets/images/splash_screen.png',
+                    width: 170, // Matches your previous icon size
+                    height: 170,
+                    fit: BoxFit
+                        .contain, // Ensures the image scales correctly within the 70x70 box
                   ),
                 ),
               ),
@@ -249,7 +231,7 @@ class _SplashScreenState extends State<SplashScreen>
               child: Column(
                 children: [
                   Text(
-                    "Mahmood Pharmacy",
+                    "MPharmacy",
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: colorScheme.primary,
@@ -315,122 +297,127 @@ class _SplashScreenState extends State<SplashScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.all(32.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Error Icon with Animation
-          TweenAnimationBuilder<double>(
-            duration: const Duration(milliseconds: 600),
-            tween: Tween(begin: 0.0, end: 1.0),
-            builder: (context, value, child) {
-              return Transform.scale(
-                scale: value,
-                child: Container(
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.errorContainer.withOpacity(0.3),
-                        colorScheme.errorContainer.withOpacity(0.1),
-                      ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Error Icon with Animation
+            TweenAnimationBuilder<double>(
+              duration: const Duration(milliseconds: 600),
+              tween: Tween(begin: 0.0, end: 1.0),
+              builder: (context, value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: Container(
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          colorScheme.errorContainer.withOpacity(0.3),
+                          colorScheme.errorContainer.withOpacity(0.1),
+                        ],
+                      ),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: colorScheme.error.withOpacity(0.3),
+                        width: 2,
+                      ),
                     ),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: colorScheme.error.withOpacity(0.3),
-                      width: 2,
+                    child: Icon(
+                      Icons.cloud_off_rounded,
+                      size: 72,
+                      color: colorScheme.error,
                     ),
                   ),
-                  child: Icon(
-                    Icons.cloud_off_rounded,
-                    size: 72,
-                    color: colorScheme.error,
-                  ),
-                ),
-              );
-            },
-          ),
-
-          const SizedBox(height: 32),
-
-          // Error Title
-          Text(
-            'Connection Issue',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
+                );
+              },
             ),
-            textAlign: TextAlign.center,
-          ),
 
-          const SizedBox(height: 12),
+            const SizedBox(height: 32),
 
-          // Error Message
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: colorScheme.outlineVariant.withOpacity(0.5),
-              ),
-            ),
-            child: Text(
-              _error ?? 'An unexpected error occurred.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                height: 1.5,
+            // Error Title
+            Text(
+              'Connection Issue',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
-          ),
 
-          const SizedBox(height: 32),
+            const SizedBox(height: 12),
 
-          // Retry Button
-          FilledButton.icon(
-            onPressed: () {
-              setState(() {
-                _isLoading = true;
-                _error = null;
-              });
-              _animationController.forward(from: 0.0);
-              _loadData();
-            },
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Try Again'),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-              shape: RoundedRectangleBorder(
+            // Error Message
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: colorScheme.outlineVariant.withOpacity(0.5),
+                ),
               ),
-              elevation: 2,
+              child: Text(
+                _error ?? 'An unexpected error occurred.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 32),
 
-          // Help Text
-          TextButton.icon(
-            onPressed: () {
-              // You can add help/support navigation here
-            },
-            icon: Icon(
-              Icons.help_outline_rounded,
-              size: 18,
-              color: colorScheme.primary.withOpacity(0.7),
+            // Retry Button
+            FilledButton.icon(
+              onPressed: () {
+                setState(() {
+                  _isLoading = true;
+                  _error = null;
+                });
+                _animationController.forward(from: 0.0);
+                _loadData();
+              },
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Try Again'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 20,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 2,
+              ),
             ),
-            label: Text(
-              'Need help?',
-              style: theme.textTheme.bodySmall?.copyWith(
+
+            const SizedBox(height: 16),
+
+            // Help Text
+            TextButton.icon(
+              onPressed: () {
+                // You can add help/support navigation here
+              },
+              icon: Icon(
+                Icons.help_outline_rounded,
+                size: 18,
                 color: colorScheme.primary.withOpacity(0.7),
               ),
+              label: Text(
+                'Need help?',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.primary.withOpacity(0.7),
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
