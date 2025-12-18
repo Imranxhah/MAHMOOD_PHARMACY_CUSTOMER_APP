@@ -98,6 +98,21 @@ class ProductProvider with ChangeNotifier {
     }
   }
 
+  Future<List<ProductModel>> fetchRelatedProducts(int categoryId) async {
+    try {
+      final response = await _apiClient.getProducts(categoryId: categoryId);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => ProductModel.fromJson(json)).toList();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error fetching related products: $e');
+      }
+    }
+    return [];
+  }
+
   Future<void> toggleFavorite(int productId) async {
     final bool currentStatus = _findCurrentStatus(productId);
     final bool optimisticStatus = !currentStatus;

@@ -6,6 +6,10 @@ import 'package:customer_app/src/features/home/presentation/main_screen.dart';
 import 'package:customer_app/src/features/auth/presentation/screens/welcome_screen.dart';
 import 'package:customer_app/src/providers/product_provider.dart';
 import 'package:customer_app/src/providers/auth_provider.dart';
+import 'package:customer_app/src/providers/notification_provider.dart';
+import 'package:awesome_notifications/awesome_notifications.dart'; // Import awesome_notifications
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:customer_app/main.dart'; // Ensure this exports handleNotificationNavigation
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -28,6 +32,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _setupAnimations();
     _startAppInitialization();
+    AwesomeNotifications().resetGlobalBadge(); // Clear badge on app start
   }
 
   void _setupAnimations() {
@@ -64,11 +69,9 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _startAppInitialization() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    // If Auth is already determined, proceed immediately
     if (authProvider.authStatus != AuthStatus.uninitialized) {
-      _checkAuthAndProceed();
+      await _checkAuthAndProceed();
     } else {
-      // Wait for Auth
       authProvider.addListener(_authListener);
     }
   }
@@ -86,11 +89,27 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (authProvider.authStatus == AuthStatus.unauthenticated) {
       if (!mounted) return;
+      
+      RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMessage != null) {
+        handleNotificationNavigation(initialMessage);
+      }
+      
+      if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const WelcomeScreen()),
       );
     } else if (authProvider.authStatus == AuthStatus.authenticated) {
-      // Proceed to load data
+      if (!mounted) return;
+      await Provider.of<NotificationProvider>(
+        context,
+        listen: false,
+      ).registerDevice();
+      
+      RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMessage != null) {
+        handleNotificationNavigation(initialMessage);
+      }
       _loadData();
     }
   }
@@ -102,7 +121,6 @@ class _SplashScreenState extends State<SplashScreen>
     });
 
     try {
-      // 1. Check Network Connectivity
       try {
         final List<ConnectivityResult> connectivityResult =
             await (Connectivity().checkConnectivity());
@@ -111,11 +129,9 @@ class _SplashScreenState extends State<SplashScreen>
           throw Exception('No internet connection. Please check your network.');
         }
       } on MissingPluginException {
-        // Ignore MissingPluginException (happens on hot restart after adding plugin)
-        // and proceed to try fetching data directly.
+        // Ignore
       }
 
-      // 2. Fetch Data
       if (!mounted) return;
       final productProvider = Provider.of<ProductProvider>(
         context,
@@ -132,7 +148,6 @@ class _SplashScreenState extends State<SplashScreen>
         throw Exception('Failed to load data.');
       }
 
-      // 3. Navigate to MainScreen
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const MainScreen()),
@@ -177,9 +192,9 @@ class _SplashScreenState extends State<SplashScreen>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                colorScheme.primary.withOpacity(0.1),
+                colorScheme.primary.withValues(alpha: 0.1),
                 colorScheme.surface,
-                colorScheme.primaryContainer.withOpacity(0.15),
+                colorScheme.primaryContainer.withValues(alpha: 0.15),
               ],
               stops: const [0.0, 0.5, 1.0],
             ),
@@ -200,7 +215,6 @@ class _SplashScreenState extends State<SplashScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Animated Logo Container
           FadeTransition(
             opacity: _fadeAnimation,
             child: ScaleTransition(
@@ -211,10 +225,9 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Center(
                   child: Image.asset(
                     'assets/images/splash_screen.png',
-                    width: 170, // Matches your previous icon size
+                    width: 170,
                     height: 170,
-                    fit: BoxFit
-                        .contain, // Ensures the image scales correctly within the 70x70 box
+                    fit: BoxFit.contain,
                   ),
                 ),
               ),
@@ -223,7 +236,6 @@ class _SplashScreenState extends State<SplashScreen>
 
           const SizedBox(height: 40),
 
-          // Animated Brand Name
           SlideTransition(
             position: _slideAnimation,
             child: FadeTransition(
@@ -253,7 +265,6 @@ class _SplashScreenState extends State<SplashScreen>
 
           const SizedBox(height: 60),
 
-          // Animated Progress Indicator
           FadeTransition(
             opacity: _fadeAnimation,
             child: SizedBox(
@@ -267,7 +278,7 @@ class _SplashScreenState extends State<SplashScreen>
                       return LinearProgressIndicator(
                         value: value,
                         backgroundColor: colorScheme.primaryContainer
-                            .withOpacity(0.3),
+                            .withValues(alpha: 0.3),
                         valueColor: AlwaysStoppedAnimation<Color>(
                           colorScheme.primary,
                         ),
@@ -280,7 +291,7 @@ class _SplashScreenState extends State<SplashScreen>
                   Text(
                     "Loading your experience...",
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                       fontSize: 12,
                     ),
                   ),
@@ -303,7 +314,6 @@ class _SplashScreenState extends State<SplashScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Error Icon with Animation
             TweenAnimationBuilder<double>(
               duration: const Duration(milliseconds: 600),
               tween: Tween(begin: 0.0, end: 1.0),
@@ -317,13 +327,13 @@ class _SplashScreenState extends State<SplashScreen>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          colorScheme.errorContainer.withOpacity(0.3),
-                          colorScheme.errorContainer.withOpacity(0.1),
+                          colorScheme.errorContainer.withValues(alpha: 0.3),
+                          colorScheme.errorContainer.withValues(alpha: 0.1),
                         ],
                       ),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: colorScheme.error.withOpacity(0.3),
+                        color: colorScheme.error.withValues(alpha: 0.3),
                         width: 2,
                       ),
                     ),
@@ -339,7 +349,6 @@ class _SplashScreenState extends State<SplashScreen>
 
             const SizedBox(height: 32),
 
-            // Error Title
             Text(
               'Connection Issue',
               style: theme.textTheme.headlineSmall?.copyWith(
@@ -351,14 +360,13 @@ class _SplashScreenState extends State<SplashScreen>
 
             const SizedBox(height: 12),
 
-            // Error Message
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: colorScheme.outlineVariant.withOpacity(0.5),
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.5),
                 ),
               ),
               child: Text(
@@ -373,7 +381,6 @@ class _SplashScreenState extends State<SplashScreen>
 
             const SizedBox(height: 32),
 
-            // Retry Button
             FilledButton.icon(
               onPressed: () {
                 setState(() {
@@ -399,20 +406,18 @@ class _SplashScreenState extends State<SplashScreen>
 
             const SizedBox(height: 16),
 
-            // Help Text
             TextButton.icon(
               onPressed: () {
-                // You can add help/support navigation here
               },
               icon: Icon(
                 Icons.help_outline_rounded,
                 size: 18,
-                color: colorScheme.primary.withOpacity(0.7),
+                color: colorScheme.primary.withValues(alpha: 0.7),
               ),
               label: Text(
                 'Need help?',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.primary.withOpacity(0.7),
+                  color: colorScheme.primary.withValues(alpha: 0.7),
                 ),
               ),
             ),

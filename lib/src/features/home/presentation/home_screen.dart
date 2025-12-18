@@ -10,6 +10,8 @@ import '../../../common_widgets/custom_widgets.dart';
 import '../../../common_widgets/product_card.dart';
 import '../../products/presentation/product_list_screen.dart';
 import 'dart:async';
+import '../../notifications/presentation/notification_screen.dart';
+import '../../../providers/notification_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -173,12 +175,27 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       actions: [
-        IconButton(
-          icon: Icon(
-            Icons.notifications_outlined,
-            color: isDark ? colorScheme.onSurface : Colors.white,
-          ),
-          onPressed: () {},
+        Consumer<NotificationProvider>(
+          builder: (context, notificationProvider, child) {
+            final unreadCount = notificationProvider.unreadCount;
+            return IconButton(
+              onPressed: () {
+                Provider.of<NotificationProvider>(context, listen: false).markAllRead();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const NotificationScreen()),
+                );
+              },
+              icon: Badge(
+                isLabelVisible: unreadCount > 0,
+                label: Text('$unreadCount'),
+                backgroundColor: Colors.red,
+                child: Icon(
+                  Icons.notifications_outlined,
+                  color: isDark ? colorScheme.onSurface : Colors.white,
+                ),
+              ),
+            );
+          },
         ),
         gapW4,
       ],
@@ -396,16 +413,32 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Section Header
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      section.category.name,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.3,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            section.category.name,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${section.products.length} products',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     TextButton.icon(
@@ -433,32 +466,52 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               gapH16,
-              SizedBox(
-                height: 215,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: section.products.length,
-                  separatorBuilder: (_, __) => gapW12,
-                  itemBuilder: (context, idx) {
-                    final product = section.products[idx];
-                    return SizedBox(
-                      width: 145,
-                      child: ProductCard(
-                        product: product,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ProductDetailScreen(product: product),
-                            ),
-                          );
-                        },
+
+              // Products Grid - Enhanced Layout
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  // Calculate optimal card width and count based on screen size
+                  final screenWidth = constraints.maxWidth;
+                  final cardWidth = 165.0; // Slightly larger cards
+                  final spacing = 12.0;
+                  final horizontalPadding = AppSizes.p16 * 2;
+
+                  // Calculate how many cards can fit
+                  final availableWidth = screenWidth - horizontalPadding;
+                  final cardsPerRow = (availableWidth / (cardWidth + spacing))
+                      .floor()
+                      .clamp(2, 4);
+
+                  return SizedBox(
+                    height: 240, // Increased height for better proportions
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSizes.p16,
                       ),
-                    );
-                  },
-                ),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: section.products.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (context, idx) {
+                        final product = section.products[idx];
+                        return SizedBox(
+                          width: cardWidth,
+                          child: ProductCard(
+                            product: product,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      ProductDetailScreen(product: product),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
             ],
           ),

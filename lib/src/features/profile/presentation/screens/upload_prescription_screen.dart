@@ -6,6 +6,8 @@ import 'package:flutter/services.dart'; // For TextInputFormatter
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:customer_app/src/providers/prescription_provider.dart';
+import 'package:customer_app/src/providers/branch_provider.dart';
+import 'package:customer_app/src/models/branch_model.dart';
 import '../../../../constants/app_sizes.dart';
 import '../../../../common_widgets/custom_widgets.dart';
 
@@ -25,6 +27,15 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isUploading = false;
   String? _contactNumberError; // To display backend validation errors
+  BranchModel? _selectedBranch;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<BranchProvider>(context, listen: false).fetchLocationAndData();
+    });
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     final XFile? selectedImage = await _picker.pickImage(source: source);
@@ -45,6 +56,12 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
       return;
     }
 
+    // 3. Validate Branch
+    if (_selectedBranch == null) {
+      _showSnackBar("Please select a branch.", Colors.red);
+      return;
+    }
+
     setState(() {
       _isUploading = true;
       _contactNumberError = null; // Clear previous backend errors
@@ -57,6 +74,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
       ).uploadPrescription(
         image: File(_imageFile!.path),
         contactNumber: _contactNumberController.text,
+        branchId: _selectedBranch!.id,
         notes: _notesController.text.isEmpty ? null : _notesController.text,
       );
       if (!mounted) return;
@@ -211,6 +229,80 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                       _contactNumberError = null;
                     });
                   }
+                },
+              ),
+              const SizedBox(height: AppSizes.p24),
+
+              // Branch Section
+              Text(
+                "Select Nearest Branch",
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: AppSizes.p12),
+              Consumer<BranchProvider>(
+                builder: (context, branchProvider, child) {
+                  if (branchProvider.isLoading ||
+                      branchProvider.isLocationLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+                  if (branchProvider.locationError != null) {
+                    return Text(
+                      "Location Error: ${branchProvider.locationError!}",
+                      style: const TextStyle(color: Colors.red),
+                    );
+                  }
+                  if (branchProvider.error != null) {
+                    return Text(
+                      "Branch Error: ${branchProvider.error!}",
+                      style: const TextStyle(color: Colors.red),
+                    );
+                  }
+                  if (branchProvider.foundBranches.isEmpty) {
+                    return const Text("No branches found near your location.");
+                  }
+
+                  // Auto-select the first nearest branch if none is selected
+                  if (_selectedBranch == null &&
+                      branchProvider.foundBranches.isNotEmpty) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      setState(() {
+                        _selectedBranch = branchProvider.foundBranches.first;
+                      });
+                    });
+                  }
+
+                  return DropdownButtonFormField<BranchModel>(
+                    value: _selectedBranch,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    hint: const Text("Choose a branch"),
+                    isExpanded: true, // Prevent overflow
+                    items: branchProvider.foundBranches.map((branch) {
+                      return DropdownMenuItem<BranchModel>(
+                        value: branch,
+                        child: Text(
+                          "${branch.name} (${branch.distanceKm?.toStringAsFixed(1)} km)",
+                          overflow: TextOverflow.ellipsis, // Handle text overflow
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedBranch = value;
+                      });
+                    },
+                  );
                 },
               ),
               const SizedBox(height: AppSizes.p16),

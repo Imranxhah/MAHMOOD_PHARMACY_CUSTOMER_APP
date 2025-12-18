@@ -44,6 +44,10 @@ dependencies:
   url_launcher: ^6.3.0
   shared_preferences: ^2.5.4
   connectivity_plus: ^7.0.0
+  firebase_core: ^4.3.0
+  firebase_messaging: ^16.1.0
+  flutter_local_notifications: ^19.5.0
+  awesome_notifications: ^0.10.1
 
 dev_dependencies:
   flutter_test:

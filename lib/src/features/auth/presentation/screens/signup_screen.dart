@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Import for FilteringTextInputFormatter
 import 'package:provider/provider.dart';
 import 'package:customer_app/src/providers/auth_provider.dart';
 import 'package:customer_app/src/constants/app_sizes.dart';
@@ -174,9 +175,22 @@ class _SignupScreenState extends State<SignupScreen> {
                   label: AppStrings.phoneNumber,
                   keyboardType: TextInputType.phone,
                   prefixIcon: Icons.phone_outlined,
-                  validator: (value) => (value == null || value.isEmpty)
-                      ? AppStrings.enterPhoneNumber
-                      : null,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(11),
+                  ],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return AppStrings.enterPhoneNumber;
+                    }
+                    if (value.length != 11) {
+                      return "Phone number must be 11 digits";
+                    }
+                    if (!value.startsWith("03")) {
+                      return "Phone number must start with 03";
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: AppSizes.p24),
                 // Sign Up Button

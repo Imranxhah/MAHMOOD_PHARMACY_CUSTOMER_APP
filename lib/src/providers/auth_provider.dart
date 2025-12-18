@@ -37,7 +37,7 @@ class AuthProvider with ChangeNotifier {
         await _loadUser(accessToken);
         // If _loadUser succeeds (even after refresh), we are authenticated
         _authStatus = AuthStatus.authenticated;
-      } catch (e) {
+      } catch (_) {
         _authStatus = AuthStatus.unauthenticated;
       }
     } else {
@@ -280,26 +280,26 @@ class AuthProvider with ChangeNotifier {
       final response = await _apiClient.dio.get('users/profile/');
       if (response.statusCode == 200) {
         _user = User.fromJson(response.data);
-      } else {
-        // If profile fetch fails for some reason (e.g., 404, 500), treat as unauthenticated
-        _user = null;
-        _authStatus = AuthStatus.unauthenticated;
-        await _storageService.deleteAll(); // Clear tokens if profile not found/accessible
       }
     } on DioException catch (e) {
-      // Specific handling for Dio errors (e.g., network issues, 401 on profile fetch)
-      _user = null;
-      _authStatus = AuthStatus.unauthenticated;
-      await _storageService.deleteAll(); // Clear tokens
-      debugPrint('Failed to load user profile: ${e.message}');
+      // Only logout if unauthorized (token invalid/expired and refresh failed)
+      if (e.response?.statusCode == 401) {
+        _user = null;
+        _authStatus = AuthStatus.unauthenticated;
+        await _storageService.deleteAll();
+      } else {
+        // For other errors (network, 500, etc.), keep the user "authenticated" locally
+        // but maybe in a "offline" or "error" state if needed.
+        // For now, we just keep the previous state or don't logout.
+        debugPrint('Failed to load user profile (network/server error): ${e.message}');
+        // We still consider them authenticated because the token exists and was valid enough to try
+        // The ApiClient handles token refresh logic on 401s globally too.
+      }
     } catch (e) {
-      // Generic error handling
-      _user = null;
-      _authStatus = AuthStatus.unauthenticated;
-      await _storageService.deleteAll(); // Clear tokens
-      debugPrint('An unexpected error occurred while loading user profile: $e');
+       // For other unexpected errors, log but don't logout blindly
+       debugPrint('An unexpected error occurred while loading user profile: $e');
     } finally {
-      notifyListeners(); // Always notify listeners after attempting to load user
+      notifyListeners();
     }
   }
 
@@ -377,7 +377,7 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
         return true;
       }
-    } catch (e) {
+    } catch (_) {
       // handle error
     }
     return false;
@@ -411,7 +411,7 @@ class AuthProvider with ChangeNotifier {
             .map((userJson) => User.fromJson(userJson))
             .toList();
       }
-    } catch (e) {
+    } catch (_) {
       // handle error
     }
     return [];

@@ -5,8 +5,9 @@ import 'package:customer_app/src/models/product_model.dart';
 import 'package:customer_app/src/providers/product_provider.dart';
 import 'package:customer_app/src/providers/auth_provider.dart';
 import 'package:customer_app/src/features/cart/presentation/checkout_screen.dart';
-import 'package:customer_app/src/providers/cart_provider.dart'; // Correctly import CartProvider
+import 'package:customer_app/src/providers/cart_provider.dart';
 import 'package:customer_app/src/features/auth/presentation/screens/login_screen.dart';
+import 'package:customer_app/src/common_widgets/product_card.dart'; // Import ProductCard
 import '../../../constants/app_sizes.dart';
 import '../../../constants/app_strings.dart';
 import '../../../common_widgets/custom_widgets.dart';
@@ -23,11 +24,40 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _quantity = 1;
   late ProductModel _currentProduct;
+  List<ProductModel> _relatedProducts = [];
+  bool _isLoadingRelated = false;
 
   @override
   void initState() {
     super.initState();
     _currentProduct = widget.product;
+    _fetchRelatedProducts();
+  }
+
+  Future<void> _fetchRelatedProducts() async {
+    setState(() {
+      _isLoadingRelated = true;
+    });
+    try {
+      final products = await Provider.of<ProductProvider>(
+        context,
+        listen: false,
+      ).fetchRelatedProducts(_currentProduct.category);
+      if (mounted) {
+        setState(() {
+          _relatedProducts =
+              products.where((p) => p.id != _currentProduct.id).toList();
+        });
+      }
+    } catch (e) {
+      // Handle error gracefully or just show empty list
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingRelated = false;
+        });
+      }
+    }
   }
 
   void _increment() {
@@ -66,8 +96,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            liveProduct
-                    .isFavorite // If this is updated in place
+            liveProduct.isFavorite
                 ? 'Added to favorites'
                 : 'Removed from favorites',
           ),
@@ -178,36 +207,34 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  // ... (rest of methods)
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppStrings.details),
+
+        // -----------------------
         actions: [
           Consumer<ProductProvider>(
             builder: (context, provider, child) {
-              // Find the live product object from the provider to ensure we have the latest state
-              // Search in products list, favorites, or homeData
               ProductModel? liveProduct;
 
-              // Check products list
+              // (Logic to find live product...)
               if (provider.products.any((p) => p.id == widget.product.id)) {
                 liveProduct = provider.products.firstWhere(
                   (p) => p.id == widget.product.id,
                 );
-              }
-              // Check favorites
-              else if (provider.favorites.any(
+              } else if (provider.favorites.any(
                 (p) => p.id == widget.product.id,
               )) {
                 liveProduct = provider.favorites.firstWhere(
                   (p) => p.id == widget.product.id,
                 );
-              }
-              // Check home data
-              else if (provider.homeData != null) {
+              } else if (provider.homeData != null) {
                 for (var section in provider.homeData!.sections) {
                   if (section.products.any((p) => p.id == widget.product.id)) {
                     liveProduct = section.products.firstWhere(
@@ -217,9 +244,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   }
                 }
               }
-
-              // Fallback to widget.product if not found (e.g. from search result not in main lists)
-              // Ideally Provider should have a getProductById or map.
               liveProduct ??= widget.product;
 
               return IconButton(
@@ -228,192 +252,367 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   liveProduct.isFavorite
                       ? Icons.favorite
                       : Icons.favorite_border,
+                  // Keep the heart red if liked, otherwise use the theme's text color
                   color: liveProduct.isFavorite
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : null,
+                      ? const Color.fromARGB(255, 255, 255, 255)
+                      : Colors.white,
                 ),
               );
             },
           ),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.share)),
+          const SizedBox(width: 8),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- Product Image Section ---
+            Container(
+              width: double.infinity,
+              height: 300,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? colorScheme.surfaceContainerHighest.withOpacity(0.5)
+                    : colorScheme.surfaceContainerLow,
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(32),
+                ),
+              ),
+              child: Hero(
+                tag: _currentProduct.id,
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child:
+                      _currentProduct.image != null &&
+                              _currentProduct.image!.isNotEmpty
+                          ? Image.network(
+                              _currentProduct.image!,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Center(
+                                    child: Icon(
+                                      Icons.broken_image_rounded,
+                                      size: 80,
+                                      color: colorScheme.outlineVariant,
+                                    ),
+                                  ),
+                            )
+                          : Center(
+                              child: Icon(
+                                Icons.medication_rounded,
+                                size: 100,
+                                color: colorScheme.primary.withOpacity(0.5),
+                              ),
+                            ),
+                ),
+              ),
+            ),
+
+            // --- Details Section ---
+            Padding(
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product Image
+                  // Category Chip
                   Container(
-                    height: 250,
-                    width: double.infinity,
-                    color: Theme.of(context).cardColor,
-                    child:
-                        _currentProduct.image != null &&
-                            _currentProduct.image!.isNotEmpty
-                        ? Image.network(
-                            _currentProduct.image!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Center(
-                                  child: Icon(
-                                    Icons.broken_image,
-                                    size: 100,
-                                    color: Theme.of(context).colorScheme.error,
-                                  ),
-                                ),
-                          )
-                        : Center(
-                            child: Icon(
-                              Icons.medication,
-                              size: 100,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(AppSizes.p24),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(24),
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _currentProduct.categoryName,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _currentProduct.name,
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "Category: ${_currentProduct.categoryName}", // Assuming category name is sufficient
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "\$ ${_currentProduct.price}",
-                              style: Theme.of(context).textTheme.headlineSmall
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                  ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Title
+                  Text(
+                    _currentProduct.name,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Price and Quantity Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Price
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Price",
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
                             ),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).cardColor,
-                                borderRadius: BorderRadius.circular(
-                                  AppSizes.radius8,
-                                ),
-                                border: Border.all(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.outlineVariant,
+                          ),
+                          Text(
+                            "PKR ${_currentProduct.price}",
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Modern Capsule Quantity Selector
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        child: Row(
+                          children: [
+                            _QuantityButton(
+                              icon: Icons.remove,
+                              onTap: _decrement,
+                              colorScheme: colorScheme,
+                            ),
+                            SizedBox(
+                              width: 40,
+                              child: Text(
+                                "$_quantity",
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onSecondaryContainer,
                                 ),
                               ),
-                              child: Row(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.remove, size: 18),
-                                    onPressed: _decrement,
-                                    visualDensity: VisualDensity.compact,
-                                  ),
-                                  Text(
-                                    "$_quantity",
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.add, size: 18),
-                                    onPressed: _increment,
-                                    visualDensity: VisualDensity.compact,
-                                  ),
-                                ],
-                              ),
+                            ),
+                            _QuantityButton(
+                              icon: Icons.add,
+                              onTap: _increment,
+                              colorScheme: colorScheme,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 24),
-                        Text(
-                          AppStrings.description,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _currentProduct.description,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                                height: 1.5,
-                              ),
-                        ),
-                        const SizedBox(height: 24),
-                        // Related products would go here
-                      ],
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
+                  Divider(color: colorScheme.outlineVariant),
+                  const SizedBox(height: 16),
+
+                  // Description Header
+                  Text(
+                    AppStrings.description,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const SizedBox(height: 12),
+
+                  // Description Body
+                  Text(
+                    _currentProduct.description,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // --- Buttons Section ---
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 54, // Consistent height
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: colorScheme.primary),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            onPressed: () {
+                              Provider.of<CartProvider>(
+                                context,
+                                listen: false,
+                              ).addItem(_currentProduct, _quantity);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(AppStrings.addedToCart),
+                                ),
+                              );
+                            },
+                            child: Text(
+                              AppStrings.addToCart,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: SizedBox(
+                          height: 54,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colorScheme.primary,
+                              foregroundColor: colorScheme.onPrimary,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            onPressed: _buyNow,
+                            child: const Text(
+                              "Buy Now",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 40),
+
+                                    // --- Related Products Section ---
+
+                                    if (_relatedProducts.isNotEmpty) ...[
+
+                                      Text(
+
+                                        "Related Products",
+
+                                        style: theme.textTheme.titleLarge?.copyWith(
+
+                                          fontWeight: FontWeight.bold,
+
+                                        ),
+
+                                      ),
+
+                                      const SizedBox(height: 16),
+
+                                      GridView.builder(
+
+                                        shrinkWrap: true, // Important for nested scroll views
+
+                                        physics: const NeverScrollableScrollPhysics(), // Disable GridView's own scrolling
+
+                                        padding: EdgeInsets.zero, // Padding will be handled by the main Padding
+
+                                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+
+                                          crossAxisCount: 2, // Two columns
+
+                                          crossAxisSpacing: 16, // Spacing between columns
+
+                                          mainAxisSpacing: 16, // Spacing between rows
+
+                                          childAspectRatio: 0.65, // Adjust as needed to maintain aspect ratio for cards
+
+                                        ),
+
+                                        itemCount: _relatedProducts.length,
+
+                                        itemBuilder: (context, index) {
+
+                                          return ProductCard(
+
+                                            product: _relatedProducts[index],
+
+                                            onTap: () {
+
+                                              Navigator.push(
+
+                                                context,
+
+                                                MaterialPageRoute(
+
+                                                  builder: (context) => ProductDetailScreen(
+
+                                                    product: _relatedProducts[index],
+
+                                                  ),
+
+                                                ),
+
+                                              );
+
+                                            },
+
+                                          );
+
+                                        },
+
+                                      ),
+
+                                      const SizedBox(height: 24),
+
+                                    ] else if (_isLoadingRelated) ...[
+
+                                      const Center(child: CircularProgressIndicator()),
+
+                                      const SizedBox(height: 24),
+
+                                    ],
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Helper widget for cleaner code in the Quantity Selector
+class _QuantityButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final ColorScheme colorScheme;
+
+  const _QuantityButton({
+    required this.icon,
+    required this.onTap,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(50),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: colorScheme.surface,
           ),
-          Container(
-            padding: const EdgeInsets.all(AppSizes.p16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).shadowColor.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -4),
-                ),
-              ],
-            ),
-            child: Row(
-              // Changed to Row to include Buy Now button
-              children: [
-                Expanded(
-                  child: CustomButton(
-                    text: AppStrings.addToCart,
-                    onPressed: () {
-                      Provider.of<CartProvider>(
-                        context,
-                        listen: false,
-                      ).addItem(_currentProduct, _quantity);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text(AppStrings.addedToCart)),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: AppSizes.p16),
-                Expanded(
-                  child: CustomButton(
-                    text: "Buy Now", // Assuming "Buy Now" string or similar
-                    onPressed: _buyNow,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          child: Icon(icon, size: 20, color: colorScheme.onSurface),
+        ),
       ),
     );
   }

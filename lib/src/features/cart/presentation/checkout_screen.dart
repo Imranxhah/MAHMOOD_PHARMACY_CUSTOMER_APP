@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Import for FilteringTextInputFormatter
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import 'package:customer_app/src/providers/order_provider.dart';
@@ -30,6 +31,7 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
+  final _formKey = GlobalKey<FormState>(); // Add GlobalKey for Form
   int _selectedPaymentIndex = 0; // 0 for Cash on Delivery, 1 for Card
   String _selectedOrderType = "Normal"; // Default to Normal
   final TextEditingController _shippingAddressController =
@@ -55,6 +57,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         context,
         listen: false,
       ).fetchAddresses(); // Fetch addresses
+      Provider.of<CartProvider>(
+        context,
+        listen: false,
+      ).fetchDeliveryCharges(); // Fetch delivery charges
     });
   }
 
@@ -98,6 +104,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _placeOrder() async {
+    // Validate Form first
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     if (_cartValidationErrorMessage != null) {
       _showErrorDialog(
         "Cannot Place Order",
@@ -192,15 +203,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final deliveryFee = Provider.of<CartProvider>(context).deliveryFee;
+
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.checkout)),
       body: _isValidatingCart
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(AppSizes.p16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   // Order Type Selection
                   Text(
                     "Order Type",
@@ -355,9 +370,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     controller: _contactNumberController,
                     hint: "e.g., 03001234567",
                     keyboardType: TextInputType.phone,
-                    validator: (value) => value!.isEmpty
-                        ? "Contact number cannot be empty"
-                        : null,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(11),
+                    ],
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Contact number cannot be empty";
+                      }
+                      if (value.length != 11) {
+                        return "Phone number must be 11 digits";
+                      }
+                      if (!value.startsWith("03")) {
+                        return "Phone number must start with 03";
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: AppSizes.p24),
 
@@ -514,16 +542,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(AppStrings.subtotal),
-                            Text("\$ ${widget.cartTotal.toStringAsFixed(2)}"),
+                            Text("PKR ${widget.cartTotal.toStringAsFixed(2)}"),
                           ],
                         ),
                         const SizedBox(height: 8),
-                        const Row(
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(AppStrings.deliveryFee),
-                            Text("\$ 2.00"),
-                          ], // Hardcoded delivery fee for now
+                            const Text(AppStrings.deliveryFee),
+                            Text("PKR ${deliveryFee.toStringAsFixed(2)}"),
+                          ],
                         ),
                         const Divider(height: 24),
                         Row(
@@ -535,7 +563,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Text(
-                              "\$ ${(widget.cartTotal + 2.00).toStringAsFixed(2)}", // Hardcoded delivery fee
+                              "PKR ${(widget.cartTotal + deliveryFee).toStringAsFixed(2)}",
                               style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(
                                     fontWeight: FontWeight.bold,
@@ -557,6 +585,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ],
               ),
             ),
+          ),
     );
   }
 }

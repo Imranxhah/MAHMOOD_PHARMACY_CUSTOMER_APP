@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:customer_app/src/models/product_model.dart';
+import 'package:customer_app/src/features/auth/presentation/screens/login_screen.dart';
 import 'package:customer_app/src/providers/auth_provider.dart';
 import 'package:customer_app/src/providers/cart_provider.dart';
 import 'package:customer_app/src/providers/product_provider.dart';
@@ -30,7 +31,7 @@ class _ProductCardState extends State<ProductCard>
     );
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.98,
+      end: 0.97,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
@@ -44,6 +45,7 @@ class _ProductCardState extends State<ProductCard>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -60,60 +62,47 @@ class _ProductCardState extends State<ProductCard>
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [theme.cardColor, theme.cardColor.withOpacity(0.95)],
-              ),
-              borderRadius: BorderRadius.circular(12),
+              color: isDark ? colorScheme.surface : Colors.white,
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: _isHovered
-                    ? colorScheme.primary.withOpacity(0.3)
-                    : colorScheme.outlineVariant.withOpacity(0.2),
+                    ? colorScheme.primary.withOpacity(0.4)
+                    : colorScheme.outlineVariant.withOpacity(0.15),
                 width: _isHovered ? 1.5 : 1.0,
               ),
               boxShadow: [
                 BoxShadow(
                   color: _isHovered
-                      ? colorScheme.primary.withOpacity(0.15)
-                      : theme.shadowColor.withOpacity(0.08),
-                  blurRadius: _isHovered ? 12 : 8,
-                  spreadRadius: _isHovered ? 1 : 0,
-                  offset: Offset(0, _isHovered ? 4 : 2),
-                ),
-                BoxShadow(
-                  color: theme.shadowColor.withOpacity(0.04),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
+                      ? colorScheme.primary.withOpacity(0.2)
+                      : (isDark
+                            ? Colors.black.withOpacity(0.3)
+                            : Colors.black.withOpacity(0.08)),
+                  blurRadius: _isHovered ? 16 : 10,
+                  spreadRadius: _isHovered ? 2 : 0,
+                  offset: Offset(0, _isHovered ? 6 : 3),
                 ),
               ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
-                // Square Image with 1:1 aspect ratio & Favorite Icon
+                // Image Section with improved aspect ratio
                 AspectRatio(
-                  aspectRatio: 1,
+                  aspectRatio: 1.1,
                   child: Stack(
                     children: [
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              colorScheme.surfaceContainerHighest.withOpacity(
-                                0.3,
-                              ),
-                              colorScheme.surfaceContainerHighest.withOpacity(
-                                0.1,
-                              ),
-                            ],
-                          ),
+                          color: isDark
+                              ? colorScheme.surfaceContainerHighest.withOpacity(
+                                  0.3,
+                                )
+                              : colorScheme.surfaceContainerHighest.withOpacity(
+                                  0.15,
+                                ),
                           borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
+                            top: Radius.circular(16),
                           ),
                           image:
                               (widget.product.image != null &&
@@ -129,62 +118,65 @@ class _ProductCardState extends State<ProductCard>
                                 !widget.product.image!.startsWith('http'))
                             ? Center(
                                 child: Container(
-                                  padding: const EdgeInsets.all(12),
+                                  padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
                                     color: colorScheme.primaryContainer
-                                        .withOpacity(0.3),
+                                        .withOpacity(0.4),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
-                                    Icons.medication,
-                                    size: 32,
-                                    color: colorScheme.primary.withOpacity(0.6),
+                                    Icons.medication_rounded,
+                                    size: 36,
+                                    color: colorScheme.primary.withOpacity(0.7),
                                   ),
                                 ),
                               )
                             : null,
                       ),
-                      // Gradient overlay for better icon visibility
+
+                      // Subtle gradient overlay
                       if (widget.product.image != null)
                         Positioned.fill(
                           child: Container(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                begin: Alignment.topRight,
-                                end: Alignment.bottomLeft,
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
                                 colors: [
-                                  Colors.black.withOpacity(0.1),
                                   Colors.transparent,
+                                  Colors.black.withOpacity(0.05),
                                 ],
                               ),
                               borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(12),
+                                top: Radius.circular(16),
                               ),
                             ),
                           ),
                         ),
-                      // Favorite Button
+
+                      // Favorite Button with improved styling
                       Positioned(
-                        top: 6,
-                        right: 6,
+                        top: 8,
+                        right: 8,
                         child: Consumer2<AuthProvider, ProductProvider>(
                           builder: (context, auth, productProvider, _) {
                             return Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
+                                color: (isDark ? Colors.black : Colors.white)
+                                    .withOpacity(0.85),
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withOpacity(0.15),
-                                    blurRadius: 6,
+                                    blurRadius: 8,
                                     offset: const Offset(0, 2),
                                   ),
                                 ],
                               ),
                               child: Material(
-                                color: theme.cardColor.withOpacity(0.95),
+                                color: Colors.transparent,
                                 shape: const CircleBorder(),
                                 clipBehavior: Clip.antiAlias,
-                                elevation: 0,
                                 child: InkWell(
                                   onTap: () async {
                                     if (!auth.isAuthenticated) {
@@ -205,7 +197,11 @@ class _ProductCardState extends State<ProductCard>
                                             label: "Login",
                                             textColor: colorScheme.primary,
                                             onPressed: () {
-                                              // Navigation logic would go here
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) => const LoginScreen(),
+                                                ),
+                                              );
                                             },
                                           ),
                                           behavior: SnackBarBehavior.floating,
@@ -240,7 +236,7 @@ class _ProductCardState extends State<ProductCard>
                                     }
                                   },
                                   child: Padding(
-                                    padding: const EdgeInsets.all(6),
+                                    padding: const EdgeInsets.all(8),
                                     child: Icon(
                                       widget.product.isFavorite
                                           ? Icons.favorite
@@ -248,8 +244,8 @@ class _ProductCardState extends State<ProductCard>
                                       color: widget.product.isFavorite
                                           ? colorScheme.primary
                                           : colorScheme.onSurfaceVariant
-                                                .withValues(alpha: 0.6),
-                                      size: 18,
+                                                .withOpacity(0.7),
+                                      size: 20,
                                     ),
                                   ),
                                 ),
@@ -262,68 +258,68 @@ class _ProductCardState extends State<ProductCard>
                   ),
                 ),
 
-                // Details & Cart Button - Compact layout
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        theme.cardColor,
-                        theme.cardColor.withOpacity(0.98),
-                      ],
-                    ),
-                    borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(12),
-                    ),
-                  ),
+                // Content Section with improved spacing
+                Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        // Product Name
                         Text(
                           widget.product.name,
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                            height: 1.1,
+                            fontSize: 13.5,
+                            height: 1.3,
                             letterSpacing: 0.1,
-                            color: theme.textTheme.titleSmall?.color
-                                ?.withOpacity(0.9),
                           ),
                         ),
-                        const SizedBox(height: 4),
+
+                        const SizedBox(height: 8),
+
+                        // Price and Cart Button Row
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Flexible(
+                            // Price Container
+                            Expanded(
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
+                                  horizontal: 10,
+                                  vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(6),
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      colorScheme.primaryContainer,
+                                      colorScheme.primaryContainer.withOpacity(
+                                        0.8,
+                                      ),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  "\$${widget.product.price}",
-                                  style: theme.textTheme.bodySmall?.copyWith(
+                                  "PKR ${widget.product.price}",
+                                  style: theme.textTheme.bodyMedium?.copyWith(
                                     color: colorScheme.onPrimaryContainer,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                    letterSpacing: 0.2,
+                                    fontSize: 13,
+                                    letterSpacing: 0.3,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 6),
+
+                            const SizedBox(width: 8),
+
+                            // Cart Button
                             Consumer<CartProvider>(
                               builder: (context, cart, _) {
                                 final isInCart = cart.items.containsKey(
@@ -332,26 +328,38 @@ class _ProductCardState extends State<ProductCard>
 
                                 return Container(
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(6),
+                                    borderRadius: BorderRadius.circular(8),
+                                    gradient: LinearGradient(
+                                      colors: isInCart
+                                          ? [
+                                              colorScheme.errorContainer,
+                                              colorScheme.errorContainer
+                                                  .withOpacity(0.9),
+                                            ]
+                                          : [
+                                              colorScheme.primary,
+                                              colorScheme.primary.withOpacity(
+                                                0.9,
+                                              ),
+                                            ],
+                                    ),
                                     boxShadow: [
                                       BoxShadow(
                                         color:
                                             (isInCart
                                                     ? colorScheme.error
                                                     : colorScheme.primary)
-                                                .withOpacity(0.2),
-                                        blurRadius: 4,
+                                                .withOpacity(0.3),
+                                        blurRadius: 6,
                                         offset: const Offset(0, 2),
                                       ),
                                     ],
                                   ),
                                   child: Material(
-                                    color: isInCart
-                                        ? colorScheme.errorContainer
-                                        : colorScheme.primaryContainer,
-                                    borderRadius: BorderRadius.circular(6),
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
                                     child: InkWell(
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(8),
                                       onTap: () {
                                         if (isInCart) {
                                           cart.removeItem(widget.product.id);
@@ -359,26 +367,17 @@ class _ProductCardState extends State<ProductCard>
                                           cart.addItem(widget.product);
                                         }
                                       },
-                                      splashColor:
-                                          (isInCart
-                                                  ? colorScheme.error
-                                                  : colorScheme.primary)
-                                              .withOpacity(0.2),
-                                      highlightColor:
-                                          (isInCart
-                                                  ? colorScheme.error
-                                                  : colorScheme.primary)
-                                              .withOpacity(0.1),
                                       child: Padding(
-                                        padding: const EdgeInsets.all(6),
+                                        padding: const EdgeInsets.all(8),
                                         child: Icon(
                                           isInCart
-                                              ? Icons.remove_shopping_cart
-                                              : Icons.add_shopping_cart,
-                                          size: 16,
+                                              ? Icons
+                                                    .remove_shopping_cart_rounded
+                                              : Icons.add_shopping_cart_rounded,
+                                          size: 18,
                                           color: isInCart
                                               ? colorScheme.onErrorContainer
-                                              : colorScheme.onPrimaryContainer,
+                                              : Colors.white,
                                         ),
                                       ),
                                     ),

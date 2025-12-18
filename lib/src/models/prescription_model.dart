@@ -7,6 +7,8 @@ class PrescriptionModel {
   final DateTime createdAt;
   final String? notes; // For upload
   final String? adminFeedback; // For list response
+  final int branch; // Added branch ID
+  final String contactNumber; // Added contact number
 
   PrescriptionModel({
     required this.id,
@@ -15,6 +17,8 @@ class PrescriptionModel {
     required this.createdAt,
     this.notes,
     this.adminFeedback,
+    required this.branch,
+    required this.contactNumber,
   });
 
   factory PrescriptionModel.fromJson(Map<String, dynamic> json) {
@@ -34,6 +38,8 @@ class PrescriptionModel {
       createdAt: DateTime.parse(json['created_at']),
       notes: json['notes'],
       adminFeedback: json['admin_feedback'],
+      branch: json['branch'],
+      contactNumber: json['contact_number'] ?? '',
     );
   }
 
@@ -45,6 +51,8 @@ class PrescriptionModel {
       'created_at': createdAt.toIso8601String(),
       'notes': notes,
       'admin_feedback': adminFeedback,
+      'branch': branch,
+      'contact_number': contactNumber,
     };
   }
 }

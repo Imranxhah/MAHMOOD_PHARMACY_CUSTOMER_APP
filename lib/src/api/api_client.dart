@@ -181,15 +181,29 @@ class ApiClient {
 
   // --- Prescriptions Module ---
 
+  Future<Response> updatePrescription(
+    int id, {
+    String? notes,
+    String? contactNumber,
+  }) async {
+    final Map<String, dynamic> data = {};
+    if (notes != null) data['notes'] = notes;
+    if (contactNumber != null) data['contact_number'] = contactNumber;
+
+    return await _dio.patch('prescriptions/$id/', data: data);
+  }
+
   Future<Response> uploadPrescription({
     required File image,
     required String contactNumber,
+    required int branchId,
     String? notes,
   }) async {
     String fileName = image.path.split('/').last;
     FormData formData = FormData.fromMap({
       "image": await MultipartFile.fromFile(image.path, filename: fileName),
       "contact_number": contactNumber,
+      "branch": branchId,
       if (notes != null) "notes": notes,
     });
     return await _dio.post(
@@ -251,5 +265,38 @@ class ApiClient {
   // --- Auth Module (Password) ---
   Future<Response> changePassword(Map<String, dynamic> passwordData) async {
     return await _dio.post('auth/password/change/', data: passwordData);
+  }
+
+  // --- Delivery Charges ---
+  Future<Response> getDeliveryCharges() async {
+    return await _dio.get('delivery-charges/');
+  }
+
+  // --- Notifications Module ---
+
+  Future<Response> registerDevice(String fcmToken) async {
+    return await _dio.post(
+      'notifications/register-device/',
+      data: {'fcm_token': fcmToken},
+    );
+  }
+
+  Future<Response> getNotifications() async {
+    return await _dio.get('notifications/');
+  }
+
+  Future<Response> markAllRead() async {
+    return await _dio.patch('notifications/mark-all-read/');
+  }
+
+  Future<Response> updateNotification(int id, {bool? isRead}) async {
+    return await _dio.patch(
+      'notifications/$id/',
+      data: {'is_read': isRead},
+    );
+  }
+
+  Future<Response> deleteNotification(int id) async {
+    return await _dio.delete('notifications/$id/');
   }
 }

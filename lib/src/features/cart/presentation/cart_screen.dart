@@ -84,15 +84,13 @@ class CartScreen extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  "\$ ${cartItem.product.price}",
-                                  style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
+                                  Text(
+                                    "PKR ${cartItem.product.price}",
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
                               ],
                             ),
                           ),
@@ -166,7 +164,7 @@ class CartScreen extends StatelessWidget {
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          "\$ ${cartProvider.totalAmount.toStringAsFixed(2)}",
+                          "PKR ${cartProvider.totalAmount.toStringAsFixed(2)}",
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(
                                 fontWeight: FontWeight.bold,
@@ -176,9 +174,10 @@ class CartScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: AppSizes.p24),
-                    CustomButton(
-                      text: AppStrings.checkout,
-                      onPressed: () {
+                  CustomButton(
+                    text:
+                        "${AppStrings.checkout} • PKR ${cartProvider.totalAmount.toStringAsFixed(2)}",
+                    onPressed: () {
                         final authProvider = Provider.of<AuthProvider>(
                           context,
                           listen: false,

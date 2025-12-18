@@ -2,6 +2,7 @@ import '../constants/api_constants.dart';
 
 class ProductModel {
   final int id;
+  final int category; // Added category ID
   final String categoryName;
   final String name;
   final String description;
@@ -13,6 +14,7 @@ class ProductModel {
 
   ProductModel({
     required this.id,
+    required this.category, // Added category ID
     required this.categoryName,
     required this.name,
     required this.description,
@@ -35,6 +37,7 @@ class ProductModel {
 
     return ProductModel(
       id: json['id'],
+      category: json['category'] ?? 0, // Map category ID
       categoryName: json['category_name'] ?? '',
       name: json['name'],
       description: json['description'] ?? '',
@@ -49,6 +52,7 @@ class ProductModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'category': category, // Add category to JSON
       'category_name': categoryName,
       'name': name,
       'description': description,

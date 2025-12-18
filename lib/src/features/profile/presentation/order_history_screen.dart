@@ -398,13 +398,13 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                         ),
                       ),
                     ),
-                    Text(
-                      "\$${order.totalAmount.toStringAsFixed(2)}",
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.primary,
-                      ),
-                    ),
+Text(
+                                "PKR ${order.totalAmount.toStringAsFixed(2)}",
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
                   ],
                 ),
                 if (order.status == AppStrings.pending) ...[

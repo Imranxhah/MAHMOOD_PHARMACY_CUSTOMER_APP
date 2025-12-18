@@ -261,7 +261,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   context,
                   icon: Icons.payments_rounded,
                   label: 'Total Amount',
-                  value: '\$${order.totalAmount.toStringAsFixed(2)}',
+                  value: 'PKR ${order.totalAmount.toStringAsFixed(2)}',
                   highlight: true,
                 ),
               ],
@@ -498,7 +498,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   ),
                   gapW8,
                   Text(
-                    '\$${item.priceAtPurchase.toStringAsFixed(2)} each',
+                    'PKR ${item.priceAtPurchase.toStringAsFixed(2)} each',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -514,7 +514,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              '\$${(item.priceAtPurchase * item.quantity).toStringAsFixed(2)}',
+              'PKR ${(item.priceAtPurchase * item.quantity).toStringAsFixed(2)}',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: colorScheme.primary,

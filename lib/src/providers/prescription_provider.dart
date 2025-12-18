@@ -19,6 +19,7 @@ class PrescriptionProvider with ChangeNotifier {
   Future<void> uploadPrescription({
     required File image,
     required String contactNumber,
+    required int branchId,
     String? notes,
   }) async {
     _isLoading = true;
@@ -29,6 +30,7 @@ class PrescriptionProvider with ChangeNotifier {
       final response = await _apiClient.uploadPrescription(
         image: image,
         contactNumber: contactNumber,
+        branchId: branchId,
         notes: notes,
       );
       if (response.statusCode == 201) {
@@ -37,6 +39,39 @@ class PrescriptionProvider with ChangeNotifier {
       }
     } on DioException catch (e) {
       _error = e.response?.data['message'] ?? 'Failed to upload prescription.';
+      rethrow;
+    } catch (e) {
+      _error = 'An unexpected error occurred: $e';
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updatePrescription(
+    int id, {
+    String? notes,
+    String? contactNumber,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiClient.updatePrescription(
+        id,
+        notes: notes,
+        contactNumber: contactNumber,
+      );
+      if (response.statusCode == 200) {
+        final index = _prescriptions.indexWhere((p) => p.id == id);
+        if (index != -1) {
+          _prescriptions[index] = PrescriptionModel.fromJson(response.data);
+        }
+      }
+    } on DioException catch (e) {
+      _error = e.response?.data['message'] ?? 'Failed to update prescription.';
       rethrow;
     } catch (e) {
       _error = 'An unexpected error occurred: $e';
