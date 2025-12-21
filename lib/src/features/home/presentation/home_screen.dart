@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:customer_app/src/providers/product_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:customer_app/src/providers/banner_provider.dart';
 import 'package:customer_app/src/features/products/presentation/product_detail_screen.dart';
 import '../../../constants/app_sizes.dart';
@@ -132,20 +133,10 @@ class _HomeScreenState extends State<HomeScreen> {
       title: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? colorScheme.primaryContainer.withOpacity(0.3)
-                  : Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
             child: Image.asset(
-              'assets/images/home_screen_app_bar.png',
-              height: 24, // Matches the previous icon size
-              width: 24,
-              // Optional: If you want to tint the PNG to match the text color
-              // (like an icon), keep this line. If you want the original PNG colors, remove it.
-              color: isDark ? colorScheme.primary : Colors.white,
+              'assets/app_icon/ic_launcher.png',
+              height: 54, // Matches the previous icon size
+              width: 54,
             ),
           ),
           gapW12,
@@ -180,7 +171,10 @@ class _HomeScreenState extends State<HomeScreen> {
             final unreadCount = notificationProvider.unreadCount;
             return IconButton(
               onPressed: () {
-                Provider.of<NotificationProvider>(context, listen: false).markAllRead();
+                Provider.of<NotificationProvider>(
+                  context,
+                  listen: false,
+                ).markAllRead();
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const NotificationScreen()),
                 );
@@ -340,7 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
                 image: category.image != null
                     ? DecorationImage(
-                        image: NetworkImage(category.image!),
+                        image: CachedNetworkImageProvider(category.image!),
                         fit: BoxFit.cover,
                       )
                     : null,
@@ -623,11 +617,13 @@ class _PromotionalBannerState extends State<PromotionalBanner> {
   late PageController _pageController;
   int _currentPage = 0;
   Timer? _autoPlayTimer;
+  // Start at a large index to allow infinite scrolling in both directions
+  static const int _kStartingPage = 10000;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    _pageController = PageController(initialPage: _kStartingPage);
     _startAutoPlay();
   }
 
@@ -642,15 +638,7 @@ class _PromotionalBannerState extends State<PromotionalBanner> {
     _autoPlayTimer?.cancel();
     _autoPlayTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (_pageController.hasClients) {
-        final bannerCount = widget.bannerProvider.banners.isEmpty
-            ? 1
-            : widget.bannerProvider.banners.length;
-
-        // Added .toInt() here to fix the first error
-        final nextPage = ((_currentPage + 1) % bannerCount).toInt();
-
-        _pageController.animateToPage(
-          nextPage,
+        _pageController.nextPage(
           duration: const Duration(milliseconds: 400),
           curve: Curves.easeInOut,
         );
@@ -659,14 +647,11 @@ class _PromotionalBannerState extends State<PromotionalBanner> {
   }
 
   void _onPageChanged(int page) {
+    final banners = widget.bannerProvider.banners;
+    if (banners.isEmpty) return;
+    
     setState(() {
-      // Added .toInt() at the end here to fix the second error
-      _currentPage =
-          (page %
-                  (widget.bannerProvider.banners.isEmpty
-                      ? 1
-                      : widget.bannerProvider.banners.length))
-              .toInt();
+      _currentPage = (page % banners.length).toInt();
     });
   }
 
@@ -712,6 +697,7 @@ class _PromotionalBannerState extends State<PromotionalBanner> {
             child: PageView.builder(
               controller: _pageController,
               onPageChanged: _onPageChanged,
+              // Infinite items
               itemBuilder: (context, index) {
                 final actualIndex = index % banners.length;
                 final banner = banners[actualIndex];
@@ -742,10 +728,10 @@ class _PromotionalBannerState extends State<PromotionalBanner> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         clipBehavior: Clip.antiAlias,
-        child: Image.network(
-          banner.image,
+        child: CachedNetworkImage(
+          imageUrl: banner.image,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
+          errorWidget: (_, __, ___) => Container(
             color: theme.colorScheme.errorContainer,
             child: Icon(
               Icons.broken_image_rounded,
@@ -753,23 +739,16 @@ class _PromotionalBannerState extends State<PromotionalBanner> {
               color: theme.colorScheme.error,
             ),
           ),
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Container(
-              color: widget.isDark
-                  ? theme.colorScheme.surfaceContainerHighest
-                  : const Color.fromARGB(255, 255, 255, 255),
-              child: Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                      : null,
-                  strokeWidth: 2,
-                ),
+          placeholder: (context, url) => Container(
+            color: widget.isDark
+                ? theme.colorScheme.surfaceContainerHighest
+                : const Color.fromARGB(255, 255, 255, 255),
+            child: Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
               ),
-            );
-          },
+            ),
+          ),
         ),
       ),
     );
@@ -782,11 +761,19 @@ class _PromotionalBannerState extends State<PromotionalBanner> {
         final isActive = index == _currentPage;
         return GestureDetector(
           onTap: () {
-            _pageController.animateToPage(
-              index,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOut,
-            );
+            // Calculate the target page closest to the current page
+            if (_pageController.hasClients) {
+              final currentDataPage = _pageController.page!.round();
+              final currentMod = currentDataPage % count;
+              final difference = index - currentMod;
+              final targetPage = currentDataPage + difference;
+              
+              _pageController.animateToPage(
+                targetPage,
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+              );
+            }
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
