@@ -12,7 +12,8 @@ import 'package:customer_app/src/features/profile/presentation/screens/my_prescr
 import 'package:customer_app/src/features/branches/presentation/screens/branches_screen.dart';
 import 'package:customer_app/src/features/profile/presentation/screens/address_list_screen.dart';
 import 'package:customer_app/src/features/profile/presentation/order_history_screen.dart';
-import 'package:customer_app/src/features/profile/presentation/screens/change_password_screen.dart'; // Import ChangePasswordScreen
+import 'package:customer_app/src/features/profile/presentation/screens/change_password_screen.dart';
+import 'package:customer_app/src/common_widgets/web_view_screen.dart'; // Import WebViewScreen
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -137,6 +138,65 @@ class SettingsScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const BranchesScreen(),
+                        ),
+                      ),
+                    ),
+                  ]),
+
+                  const SizedBox(height: AppSizes.p16),
+
+                  // Legal & Support Section
+                  _buildSectionTitle(context, "Legal & Support", theme),
+                  _buildMenuCard(context, theme, [
+                    _MenuItem(
+                      icon: Icons.privacy_tip_outlined,
+                      title: "Privacy Policy",
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const WebViewScreen(
+                            title: "Privacy Policy",
+                            url: "https://mahmoodpharmacy.com.pk/privacy-policy/",
+                          ),
+                        ),
+                      ),
+                    ),
+                    _MenuItem(
+                      icon: Icons.description_outlined,
+                      title: "Terms of Service",
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const WebViewScreen(
+                            title: "Terms of Service",
+                            url: "https://mahmoodpharmacy.com.pk/terms-of-service/",
+                          ),
+                        ),
+                      ),
+                    ),
+                    _MenuItem(
+                      icon: Icons.warning_amber_rounded,
+                      title: "Disclaimer",
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const WebViewScreen(
+                            title: "Disclaimer",
+                            url: "https://mahmoodpharmacy.com.pk/disclaimer/",
+                          ),
+                        ),
+                      ),
+                    ),
+                    _MenuItem(
+                      icon: Icons.support_agent_rounded,
+                      title: "Contact Us",
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const WebViewScreen(
+                            title: "Contact Us",
+                            url: "https://mahmoodpharmacy.com.pk/complaint-form/",
+                          ),
                         ),
                       ),
                     ),

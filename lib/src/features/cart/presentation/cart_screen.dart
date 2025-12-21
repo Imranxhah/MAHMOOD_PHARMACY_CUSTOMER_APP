@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:customer_app/src/providers/cart_provider.dart';
 import 'package:customer_app/src/providers/auth_provider.dart'; // Import AuthProvider
 import 'package:customer_app/src/features/auth/presentation/screens/login_screen.dart'; // Import LoginScreen
@@ -50,11 +51,11 @@ class CartScreen extends StatelessWidget {
                             child:
                                 cartItem.product.image != null &&
                                     cartItem.product.image!.isNotEmpty
-                                ? Image.network(
-                                    cartItem.product.image!,
+                                ? CachedNetworkImage(
+                                    imageUrl: cartItem.product.image!,
                                     fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) => Center(
+                                    errorWidget:
+                                        (context, url, error) => Center(
                                           child: Icon(
                                             Icons.broken_image,
                                             color: Theme.of(

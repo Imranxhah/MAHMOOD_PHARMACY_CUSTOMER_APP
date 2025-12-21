@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:customer_app/src/models/product_model.dart';
 import 'package:customer_app/src/providers/product_provider.dart';
 import 'package:customer_app/src/providers/auth_provider.dart';
@@ -286,10 +287,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   child:
                       _currentProduct.image != null &&
                               _currentProduct.image!.isNotEmpty
-                          ? Image.network(
-                              _currentProduct.image!,
+                          ? CachedNetworkImage(
+                              imageUrl: _currentProduct.image!,
                               fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) =>
+                              errorWidget: (context, url, error) =>
                                   Center(
                                     child: Icon(
                                       Icons.broken_image_rounded,
@@ -349,7 +350,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Price
+                      // Price and Stock
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -366,45 +367,83 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               fontWeight: FontWeight.w800,
                             ),
                           ),
+                          const SizedBox(height: 4),
+                          // Stock Status
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _currentProduct.stock > 0
+                                  ? colorScheme.primary.withOpacity(0.1)
+                                  : colorScheme.error.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              _currentProduct.stock > 0
+                                  ? "In Stock: ${_currentProduct.stock}"
+                                  : "Out of Stock",
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: _currentProduct.stock > 0
+                                    ? colorScheme.primary
+                                    : colorScheme.error,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
 
                       // Modern Capsule Quantity Selector
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.secondaryContainer,
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                        child: Row(
-                          children: [
-                            _QuantityButton(
-                              icon: Icons.remove,
-                              onTap: _decrement,
-                              colorScheme: colorScheme,
-                            ),
-                            SizedBox(
-                              width: 40,
-                              child: Text(
-                                "$_quantity",
-                                textAlign: TextAlign.center,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.onSecondaryContainer,
+                      if (_currentProduct.stock > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.secondaryContainer,
+                            borderRadius: BorderRadius.circular(50),
+                          ),
+                          child: Row(
+                            children: [
+                              _QuantityButton(
+                                icon: Icons.remove,
+                                onTap: _decrement,
+                                colorScheme: colorScheme,
+                              ),
+                              SizedBox(
+                                width: 40,
+                                child: Text(
+                                  "$_quantity",
+                                  textAlign: TextAlign.center,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSecondaryContainer,
+                                  ),
                                 ),
                               ),
-                            ),
-                            _QuantityButton(
-                              icon: Icons.add,
-                              onTap: _increment,
-                              colorScheme: colorScheme,
-                            ),
-                          ],
+                              _QuantityButton(
+                                icon: Icons.add,
+                                onTap: () {
+                                  if (_quantity < _currentProduct.stock) {
+                                    _increment();
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                        .clearSnackBars();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Reached maximum stock"),
+                                      ),
+                                    );
+                                  }
+                                },
+                                colorScheme: colorScheme,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
                     ],
                   ),
 
@@ -439,28 +478,36 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           height: 54, // Consistent height
                           child: OutlinedButton(
                             style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: colorScheme.primary),
+                              side: BorderSide(
+                                color: _currentProduct.stock > 0
+                                    ? colorScheme.primary
+                                    : colorScheme.outline,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
                             ),
-                            onPressed: () {
-                              Provider.of<CartProvider>(
-                                context,
-                                listen: false,
-                              ).addItem(_currentProduct, _quantity);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(AppStrings.addedToCart),
-                                ),
-                              );
-                            },
+                            onPressed: _currentProduct.stock > 0
+                                ? () {
+                                    Provider.of<CartProvider>(
+                                      context,
+                                      listen: false,
+                                    ).addItem(_currentProduct, _quantity);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(AppStrings.addedToCart),
+                                      ),
+                                    );
+                                  }
+                                : null,
                             child: Text(
                               AppStrings.addToCart,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: colorScheme.primary,
+                                color: _currentProduct.stock > 0
+                                    ? colorScheme.primary
+                                    : colorScheme.outline,
                               ),
                             ),
                           ),
@@ -472,14 +519,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           height: 54,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: colorScheme.primary,
-                              foregroundColor: colorScheme.onPrimary,
+                              backgroundColor: _currentProduct.stock > 0
+                                  ? colorScheme.primary
+                                  : colorScheme.surfaceContainerHighest,
+                              foregroundColor: _currentProduct.stock > 0
+                                  ? colorScheme.onPrimary
+                                  : colorScheme.onSurfaceVariant,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
                             ),
-                            onPressed: _buyNow,
+                            onPressed:
+                                _currentProduct.stock > 0 ? _buyNow : null,
                             child: const Text(
                               "Buy Now",
                               style: TextStyle(

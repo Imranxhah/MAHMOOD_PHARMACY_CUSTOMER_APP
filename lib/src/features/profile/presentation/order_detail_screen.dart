@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:customer_app/src/providers/order_provider.dart';
 import 'package:customer_app/src/constants/api_constants.dart';
 import '../../../constants/app_sizes.dart';
@@ -451,10 +452,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           child: item.productImage != null
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    "${ApiConstants.mediaBaseUrl}${item.productImage}",
+                  child: CachedNetworkImage(
+                    imageUrl: "${ApiConstants.mediaBaseUrl}${item.productImage}",
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Icon(
+                    errorWidget: (_, __, ___) => Icon(
                       Icons.image_not_supported_outlined,
                       color: colorScheme.onSurfaceVariant,
                     ),

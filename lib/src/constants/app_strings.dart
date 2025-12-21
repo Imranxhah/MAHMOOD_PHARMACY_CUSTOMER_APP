@@ -1,6 +1,6 @@
 class AppStrings {
   // Auth
-  static const String appName = 'MPharmacy';
+  static const String appName = 'Mahmood Pharmacy';
   static const String welcomeBack = 'Welcome Back!';
   static const String signInToContinue = 'Sign in to continue';
   static const String signIn = 'Sign In'; // Added

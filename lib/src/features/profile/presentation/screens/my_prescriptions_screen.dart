@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:customer_app/src/providers/prescription_provider.dart';
 import 'package:customer_app/src/providers/auth_provider.dart';
 import 'package:customer_app/src/features/auth/presentation/screens/login_screen.dart';
@@ -245,10 +246,10 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
                 width: double.infinity,
                 color: theme.colorScheme.surfaceContainerHighest,
                 child: prescription.imageUrl.isNotEmpty
-                    ? Image.network(
-                        prescription.imageUrl,
+                    ? CachedNetworkImage(
+                        imageUrl: prescription.imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
+                        errorWidget: (_, __, ___) =>
                             _buildImagePlaceholder(theme),
                       )
                     : _buildImagePlaceholder(theme),

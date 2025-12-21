@@ -9,6 +9,12 @@ class CategoryModel {
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     String? imageUrl = json['image'];
+    
+    // Treat empty string as null
+    if (imageUrl != null && imageUrl.isEmpty) {
+      imageUrl = null;
+    }
+
     if (imageUrl != null && !imageUrl.startsWith('http')) {
       if (imageUrl.startsWith('/')) {
         imageUrl = '${ApiConstants.mediaBaseUrl}$imageUrl';

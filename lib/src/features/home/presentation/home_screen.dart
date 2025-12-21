@@ -299,6 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
   ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final hasImage = category.image != null && category.image!.isNotEmpty;
 
     return GestureDetector(
       onTap: () {
@@ -332,20 +333,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     offset: const Offset(0, 4),
                   ),
                 ],
-                image: category.image != null
-                    ? DecorationImage(
-                        image: CachedNetworkImageProvider(category.image!),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
               ),
-              child: category.image == null
-                  ? Icon(
-                      Icons.category_rounded,
-                      color: colorScheme.primary,
-                      size: 32,
-                    )
-                  : null,
+              child: ClipOval(
+                child: hasImage
+                    ? CachedNetworkImage(
+                        imageUrl: category.image!,
+                        fit: BoxFit.cover,
+                        errorWidget: (context, url, error) => Center(
+                          child: Icon(
+                            Icons.category_rounded,
+                            color: colorScheme.primary,
+                            size: 32,
+                          ),
+                        ),
+                        placeholder: (context, url) => Container(
+                          color: isDark
+                              ? colorScheme.surfaceContainerHighest
+                              : colorScheme.surfaceContainerHighest
+                                  .withOpacity(0.5),
+                        ),
+                      )
+                    : Center(
+                        child: Icon(
+                          Icons.category_rounded,
+                          color: colorScheme.primary,
+                          size: 32,
+                        ),
+                      ),
+              ),
             ),
             gapH8,
             Text(
@@ -465,16 +480,16 @@ class _HomeScreenState extends State<HomeScreen> {
               LayoutBuilder(
                 builder: (context, constraints) {
                   // Calculate optimal card width and count based on screen size
-                  final screenWidth = constraints.maxWidth;
+                  // final screenWidth = constraints.maxWidth; // Unused
                   final cardWidth = 165.0; // Slightly larger cards
-                  final spacing = 12.0;
-                  final horizontalPadding = AppSizes.p16 * 2;
+                  // final spacing = 12.0; // Unused
+                  // final horizontalPadding = AppSizes.p16 * 2; // Unused
 
                   // Calculate how many cards can fit
-                  final availableWidth = screenWidth - horizontalPadding;
-                  final cardsPerRow = (availableWidth / (cardWidth + spacing))
-                      .floor()
-                      .clamp(2, 4);
+                  // final availableWidth = screenWidth - horizontalPadding; // Unused
+                  // final cardsPerRow = (availableWidth / (cardWidth + spacing))
+                  //    .floor()
+                  //    .clamp(2, 4); // Unused variable removed
 
                   return SizedBox(
                     height: 240, // Increased height for better proportions
