@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Add shared_preferences import
 import 'package:customer_app/src/features/home/presentation/main_screen.dart';
 import 'package:customer_app/src/features/auth/presentation/screens/welcome_screen.dart';
 import 'package:customer_app/src/providers/product_provider.dart';
@@ -64,6 +65,9 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startAppInitialization() async {
+    // Force initialization of NotificationProvider to request permissions early
+    Provider.of<NotificationProvider>(context, listen: false);
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     if (authProvider.authStatus != AuthStatus.uninitialized) {
@@ -83,10 +87,16 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _checkAuthAndProceed() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenWelcome = prefs.getBool('has_seen_welcome') ?? false;
 
-    if (authProvider.authStatus == AuthStatus.unauthenticated) {
-      if (!mounted) return;
+    if (!mounted) return;
 
+    if (!hasSeenWelcome) {
+      // First time launch: Show Welcome Screen
+      await prefs.setBool('has_seen_welcome', true);
+
+      // Handle initial notification if any
       RemoteMessage? initialMessage = await FirebaseMessaging.instance
           .getInitialMessage();
       if (initialMessage != null) {
@@ -97,18 +107,25 @@ class _SplashScreenState extends State<SplashScreen>
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const WelcomeScreen()),
       );
-    } else if (authProvider.authStatus == AuthStatus.authenticated) {
-      if (!mounted) return;
-      await Provider.of<NotificationProvider>(
-        context,
-        listen: false,
-      ).registerDevice();
+    } else {
+      // Subsequent launch: Go directly to Main Screen (Guest or User)
 
+      // If authenticated, register device for notifications
+      if (authProvider.authStatus == AuthStatus.authenticated) {
+        await Provider.of<NotificationProvider>(
+          context,
+          listen: false,
+        ).registerDevice();
+      }
+
+      // Handle initial notification if any
       RemoteMessage? initialMessage = await FirebaseMessaging.instance
           .getInitialMessage();
       if (initialMessage != null) {
         handleNotificationNavigation(initialMessage);
       }
+
+      // Proceed to load data and go to Home
       _loadData();
     }
   }
@@ -214,17 +231,7 @@ class _SplashScreenState extends State<SplashScreen>
               child: Container(
                 width: 160,
                 height: 160,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: primaryColor.withValues(alpha: 0.15),
-                      blurRadius: 30,
-                      spreadRadius: 5,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
+                decoration: const BoxDecoration(shape: BoxShape.circle),
                 child: Image.asset(
                   'assets/app_icon/ic_launcher.png',
                   fit: BoxFit.contain,
@@ -243,13 +250,23 @@ class _SplashScreenState extends State<SplashScreen>
               child: Column(
                 children: [
                   Text(
-                    "Mahmood Pharmacy",
+                    "Mahmood",
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 27,
+                      fontSize: 36,
                       fontWeight: FontWeight.w700,
                       color: primaryColor,
                       letterSpacing: -0.5,
+                    ),
+                  ),
+                  Text(
+                    "Pharmacy",
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                      color: primaryColor,
+                      letterSpacing: 0.7,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -261,7 +278,7 @@ class _SplashScreenState extends State<SplashScreen>
                         "Your Health, Our Priority",
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 15,
+                          fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: lightTextColor,
                           letterSpacing: 0.2,
@@ -288,7 +305,7 @@ class _SplashScreenState extends State<SplashScreen>
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     color: lightTextColor,
-                    fontSize: 14,
+                    fontSize: 10,
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.2,
                   ),

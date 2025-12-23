@@ -132,12 +132,10 @@ class _HomeScreenState extends State<HomeScreen> {
       toolbarHeight: 64,
       title: Row(
         children: [
-          Container(
-            child: Image.asset(
-              'assets/app_icon/ic_launcher.png',
-              height: 54, // Matches the previous icon size
-              width: 54,
-            ),
+          Image.asset(
+            'assets/images/home_screen_app_bar.png',
+            height: 54, // Matches the previous icon size
+            width: 54,
           ),
           gapW12,
           Column(
@@ -349,8 +347,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         placeholder: (context, url) => Container(
                           color: isDark
                               ? colorScheme.surfaceContainerHighest
-                              : colorScheme.surfaceContainerHighest
-                                  .withOpacity(0.5),
+                              : colorScheme.surfaceContainerHighest.withOpacity(
+                                  0.5,
+                                ),
                         ),
                       )
                     : Center(
@@ -664,7 +663,7 @@ class _PromotionalBannerState extends State<PromotionalBanner> {
   void _onPageChanged(int page) {
     final banners = widget.bannerProvider.banners;
     if (banners.isEmpty) return;
-    
+
     setState(() {
       _currentPage = (page % banners.length).toInt();
     });
@@ -758,11 +757,7 @@ class _PromotionalBannerState extends State<PromotionalBanner> {
             color: widget.isDark
                 ? theme.colorScheme.surfaceContainerHighest
                 : const Color.fromARGB(255, 255, 255, 255),
-            child: Center(
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-              ),
-            ),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
           ),
         ),
       ),
@@ -782,7 +777,7 @@ class _PromotionalBannerState extends State<PromotionalBanner> {
               final currentMod = currentDataPage % count;
               final difference = index - currentMod;
               final targetPage = currentDataPage + difference;
-              
+
               _pageController.animateToPage(
                 targetPage,
                 duration: const Duration(milliseconds: 400),

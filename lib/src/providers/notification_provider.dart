@@ -4,14 +4,15 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:customer_app/src/api/api_client.dart';
 import 'package:customer_app/src/models/notification_model.dart';
 import 'package:dio/dio.dart';
-import 'package:awesome_notifications/awesome_notifications.dart' hide NotificationModel; // Hide colliding class
+import 'package:awesome_notifications/awesome_notifications.dart' hide NotificationModel;
+import 'package:customer_app/src/services/secure_storage_service.dart';
 
 class NotificationProvider with ChangeNotifier {
   final ApiClient _apiClient = ApiClient();
+  final SecureStorageService _storageService = SecureStorageService();
   List<NotificationModel> _notifications = [];
   bool _isLoading = false;
   String? _error;
-// ... (rest of the file content matches existing, just verifying context for the import change)
 
   List<NotificationModel> get notifications => _notifications;
   bool get isLoading => _isLoading;
@@ -64,7 +65,6 @@ class NotificationProvider with ChangeNotifier {
         RemoteNotification? notification = message.notification;
         AndroidNotification? android = message.notification?.android;
 
-        // 1. Handle Notification Payload
         if (notification != null) {
           _localNotificationsPlugin.show(
             notification.hashCode,
@@ -79,9 +79,7 @@ class NotificationProvider with ChangeNotifier {
               ),
             ),
           );
-        }
-        // 2. Fallback: Handle Data-Only Payload (if notification is null)
-        else if (message.data.isNotEmpty) {
+        } else if (message.data.isNotEmpty) {
           String? title = message.data['title'];
           String? body = message.data['body'];
           
@@ -126,20 +124,32 @@ class NotificationProvider with ChangeNotifier {
     try {
       final fcmToken = token ?? await FirebaseMessaging.instance.getToken();
       if (fcmToken != null) {
-        await _apiClient.registerDevice(fcmToken);
+        final response = await _apiClient.registerDevice(fcmToken);
         if (kDebugMode) {
-          print("Device Registered: $fcmToken");
+          print("Device Registration Status: ${response.statusCode}");
+          print("Device Registered with Token: $fcmToken");
         }
       }
     } catch (e) {
-      // Fail silently as per requirement 4.1
       if (kDebugMode) {
         print("Failed to register device: $e");
       }
     }
   }
 
+  Future<bool> _isAuthenticated() async {
+    final token = await _storageService.read('access');
+    return token != null;
+  }
+
   Future<void> fetchNotifications() async {
+    // If not authenticated, we can't fetch notifications from this API
+    if (!await _isAuthenticated()) {
+      _notifications = [];
+      notifyListeners();
+      return;
+    }
+
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -148,8 +158,11 @@ class NotificationProvider with ChangeNotifier {
       final response = await _apiClient.getNotifications();
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        _notifications =
-            data.map((json) => NotificationModel.fromJson(json)).toList();
+        // Filter out broadcast notifications (negative IDs)
+        _notifications = data
+            .map((json) => NotificationModel.fromJson(json))
+            .where((n) => n.id >= 0)
+            .toList();
       }
     } on DioException catch (e) {
       _error = e.response?.data['message'] ?? 'Failed to load notifications';
@@ -162,15 +175,34 @@ class NotificationProvider with ChangeNotifier {
   }
 
   Future<void> markAllRead() async {
+    if (!await _isAuthenticated()) return;
+
+    // Optimistic Update: Mark all as read locally first
+    _notifications = _notifications.map((n) {
+      return NotificationModel(
+        id: n.id,
+        title: n.title,
+        body: n.body,
+        isRead: true,
+        createdAt: n.createdAt,
+      );
+    }).toList();
+    notifyListeners();
+
     try {
       await _apiClient.markAllRead();
-      fetchNotifications(); // Refetch to get updated status
+      // Optionally fetch again to ensure sync
+      // await fetchNotifications(); 
     } catch (e) {
-      // Handle silently
+      // If error, maybe revert or just silently fail? 
+      // For now, we'll try to re-fetch to restore correct state
+      fetchNotifications();
     }
   }
 
   Future<void> markAsRead(int id) async {
+    if (!await _isAuthenticated()) return;
+
     // Optimistic update
     final index = _notifications.indexWhere((n) => n.id == id);
     if (index != -1) {
@@ -187,12 +219,14 @@ class NotificationProvider with ChangeNotifier {
     try {
       await _apiClient.updateNotification(id, isRead: true);
     } catch (e) {
-      // Revert if failed (optional, or just fetchNotifications)
+      // Revert or re-fetch on error
       fetchNotifications();
     }
   }
 
   Future<void> deleteNotification(int id) async {
+    if (!await _isAuthenticated()) return;
+
     // Optimistic update
     _notifications.removeWhere((n) => n.id == id);
     notifyListeners();
@@ -200,7 +234,7 @@ class NotificationProvider with ChangeNotifier {
     try {
       await _apiClient.deleteNotification(id);
     } catch (e) {
-      // Revert or fetch on error
+      // Revert or re-fetch on error
       fetchNotifications();
     }
   }

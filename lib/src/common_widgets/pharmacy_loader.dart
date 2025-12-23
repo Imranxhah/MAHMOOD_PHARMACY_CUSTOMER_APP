@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
-/// A custom loader widget themed for Mahmood Pharmacy app
-/// Features a medical cross with pulsing animation
+/// A smooth, continuous pharmacy loader with medical cross
+/// Features seamless animations without visible loops
 class PharmacyLoader extends StatefulWidget {
   final double size;
   final Color? color;
@@ -10,9 +10,9 @@ class PharmacyLoader extends StatefulWidget {
 
   const PharmacyLoader({
     super.key,
-    this.size = 40.0,
+    this.size = 60.0,
     this.color,
-    this.strokeWidth = 3.0,
+    this.strokeWidth = 4.0,
   });
 
   @override
@@ -22,38 +22,14 @@ class PharmacyLoader extends StatefulWidget {
 class _PharmacyLoaderState extends State<PharmacyLoader>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _rotationAnimation;
-  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     )..repeat();
-
-    _rotationAnimation = Tween<double>(
-      begin: 0,
-      end: 2 * math.pi,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.linear));
-
-    _scaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(
-          begin: 1.0,
-          end: 1.2,
-        ).chain(CurveTween(curve: Curves.easeInOut)),
-        weight: 50,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(
-          begin: 1.2,
-          end: 1.0,
-        ).chain(CurveTween(curve: Curves.easeInOut)),
-        weight: 50,
-      ),
-    ]).animate(_controller);
   }
 
   @override
@@ -70,18 +46,12 @@ class _PharmacyLoaderState extends State<PharmacyLoader>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        return Transform.rotate(
-          angle: _rotationAnimation.value,
-          child: Transform.scale(
-            scale: _scaleAnimation.value,
-            child: CustomPaint(
-              size: Size(widget.size, widget.size),
-              painter: _PharmacyLoaderPainter(
-                color: effectiveColor,
-                strokeWidth: widget.strokeWidth,
-                progress: _controller.value,
-              ),
-            ),
+        return CustomPaint(
+          size: Size(widget.size, widget.size),
+          painter: _PharmacyLoaderPainter(
+            color: effectiveColor,
+            strokeWidth: widget.strokeWidth,
+            progress: _controller.value,
           ),
         );
       },
@@ -102,39 +72,41 @@ class _PharmacyLoaderPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - strokeWidth;
+
+    // Smooth rotating arcs
     final paint = Paint()
-      ..color = color
+      ..color = color.withValues(alpha: 0.3)
       ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - strokeWidth;
+    // Draw multiple arcs for smooth continuous rotation
+    for (int i = 0; i < 3; i++) {
+      final arcProgress = (progress + (i * 0.33)) % 1.0;
+      final startAngle = arcProgress * 2 * math.pi - math.pi / 2;
+      final sweepAngle = math.pi * 0.6;
 
-    // Draw the circular background
-    canvas.drawCircle(
-      center,
-      radius,
-      paint..color = color.withValues(alpha: 0.2),
-    );
+      final opacity = (math.sin(arcProgress * math.pi * 2) * 0.5 + 0.5);
 
-    // Draw the animated arc
-    paint.color = color;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2,
-      2 * math.pi * progress,
-      false,
-      paint,
-    );
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweepAngle,
+        false,
+        paint..color = color.withValues(alpha: 0.2 + opacity * 0.5),
+      );
+    }
 
-    // Draw the medical cross in the center
+    // Draw the medical cross in the center with pulse effect
+    final pulseScale = 0.95 + (math.sin(progress * math.pi * 2) * 0.05);
     final crossPaint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
 
-    final crossSize = size.width * 0.35;
-    final crossThickness = crossSize * 0.3;
+    final crossSize = size.width * 0.3 * pulseScale;
+    final crossThickness = crossSize * 0.35;
 
     // Vertical bar of cross
     canvas.drawRRect(
@@ -165,18 +137,16 @@ class _PharmacyLoaderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_PharmacyLoaderPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.color != color ||
-        oldDelegate.strokeWidth != strokeWidth;
+    return oldDelegate.progress != progress;
   }
 }
 
-/// A simpler pharmacy-themed loader with pills animation
+/// Alternative: Smooth pill bounce loader
 class PharmacyPillLoader extends StatefulWidget {
   final double size;
   final Color? color;
 
-  const PharmacyPillLoader({super.key, this.size = 50.0, this.color});
+  const PharmacyPillLoader({super.key, this.size = 60.0, this.color});
 
   @override
   State<PharmacyPillLoader> createState() => _PharmacyPillLoaderState();
@@ -190,7 +160,7 @@ class _PharmacyPillLoaderState extends State<PharmacyPillLoader>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1400),
       vsync: this,
     )..repeat();
   }
@@ -213,26 +183,99 @@ class _PharmacyPillLoaderState extends State<PharmacyPillLoader>
           width: widget.size,
           height: widget.size,
           child: Stack(
+            alignment: Alignment.center,
             children: List.generate(3, (index) {
-              final delay = index * 0.2;
-              final adjustedValue = (_controller.value + delay) % 1.0;
-              final scale = math.sin(adjustedValue * math.pi);
+              // Staggered delay for each pill
+              final delay = index * 0.25;
+              final adjustedValue = (_controller.value - delay) % 1.0;
 
-              return Positioned(
-                left: widget.size / 2 - 6,
-                top: widget.size / 2 - 6 + (index - 1) * 12,
+              // Smooth sine wave for bounce
+              final bounce = math.sin(adjustedValue * math.pi * 2).abs();
+              final scale = 0.6 + (bounce * 0.4);
+              final opacity = 0.4 + (bounce * 0.6);
+
+              return Transform.translate(
+                offset: Offset(0, (index - 1) * 16),
                 child: Transform.scale(
-                  scale: 0.5 + (scale * 0.5),
+                  scale: scale,
                   child: Container(
-                    width: 12,
-                    height: 12,
+                    width: 14,
+                    height: 14,
                     decoration: BoxDecoration(
-                      color: effectiveColor.withValues(
-                        alpha: 0.3 + (scale * 0.7),
-                      ),
-                      borderRadius: BorderRadius.circular(6),
+                      color: effectiveColor.withValues(alpha: opacity),
+                      shape: BoxShape.circle,
                     ),
                   ),
+                ),
+              );
+            }),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Modern wave loader - very smooth for splash screens
+class PharmacyWaveLoader extends StatefulWidget {
+  final double size;
+  final Color? color;
+
+  const PharmacyWaveLoader({super.key, this.size = 60.0, this.color});
+
+  @override
+  State<PharmacyWaveLoader> createState() => _PharmacyWaveLoaderState();
+}
+
+class _PharmacyWaveLoaderState extends State<PharmacyWaveLoader>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final effectiveColor = widget.color ?? theme.colorScheme.primary;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return SizedBox(
+          width: widget.size,
+          height: widget.size / 2,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: List.generate(5, (index) {
+              // Each bar has a phase offset
+              final phase = (index * 0.2);
+              final waveValue = (_controller.value + phase) % 1.0;
+
+              // Smooth sine wave
+              final height = (math.sin(waveValue * math.pi * 2) * 0.5 + 0.5);
+              final barHeight = (widget.size / 2) * (0.3 + height * 0.7);
+
+              return Container(
+                width: 6,
+                height: barHeight,
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                decoration: BoxDecoration(
+                  color: effectiveColor,
+                  borderRadius: BorderRadius.circular(3),
                 ),
               );
             }),
