@@ -20,7 +20,7 @@ class PrescriptionProvider with ChangeNotifier {
     required File image,
     required String contactNumber,
     required int branchId,
-    String? notes,
+    required String address,
   }) async {
     _isLoading = true;
     _error = null;
@@ -31,7 +31,7 @@ class PrescriptionProvider with ChangeNotifier {
         image: image,
         contactNumber: contactNumber,
         branchId: branchId,
-        notes: notes,
+        address: address,
       );
       if (response.statusCode == 201) {
         _prescriptions.insert(0, PrescriptionModel.fromJson(response.data));
@@ -51,7 +51,7 @@ class PrescriptionProvider with ChangeNotifier {
 
   Future<void> updatePrescription(
     int id, {
-    String? notes,
+    String? address,
     String? contactNumber,
   }) async {
     _isLoading = true;
@@ -61,7 +61,7 @@ class PrescriptionProvider with ChangeNotifier {
     try {
       final response = await _apiClient.updatePrescription(
         id,
-        notes: notes,
+        address: address,
         contactNumber: contactNumber,
       );
       if (response.statusCode == 200) {

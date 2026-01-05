@@ -49,10 +49,10 @@ class WelcomeScreen extends StatelessWidget {
                         // We use a Container to control the maximum height so it doesn't take over the screen
                         Container(
                           height:
-                              250, // Adjust this height based on your preference
+                              150, // Adjust this height based on your preference
                           padding: const EdgeInsets.all(AppSizes.p16),
                           child: Image.asset(
-                            'assets/images/welcome_image.png', // Make sure this matches your file name
+                            'assets/images/home_screen_app_bar.png', // Make sure this matches your file name
                             fit: BoxFit.contain,
                           ),
                         ),

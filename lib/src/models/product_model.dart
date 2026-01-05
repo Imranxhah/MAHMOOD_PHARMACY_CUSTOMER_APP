@@ -5,6 +5,7 @@ class ProductModel {
   final int category; // Added category ID
   final String categoryName;
   final String name;
+  final String? genericName;
   final String description;
   final String price;
   final int stock;
@@ -17,6 +18,7 @@ class ProductModel {
     required this.category, // Added category ID
     required this.categoryName,
     required this.name,
+    this.genericName,
     required this.description,
     required this.price,
     required this.stock,
@@ -40,6 +42,7 @@ class ProductModel {
       category: json['category'] ?? 0, // Map category ID
       categoryName: json['category_name'] ?? '',
       name: json['name'],
+      genericName: json['generic_name']?.toString().trim(),
       description: json['description'] ?? '',
       price: json['price'].toString(),
       stock: json['stock'] ?? 0,
@@ -55,6 +58,7 @@ class ProductModel {
       'category': category, // Add category to JSON
       'category_name': categoryName,
       'name': name,
+      'generic_name': genericName,
       'description': description,
       'price': price,
       'stock': stock,

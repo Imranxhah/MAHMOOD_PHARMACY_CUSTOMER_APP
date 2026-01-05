@@ -159,7 +159,12 @@ class OrderProvider with ChangeNotifier {
         _orders.removeWhere((order) => order.id == orderId);
       }
     } on DioException catch (e) {
-      _error = e.response?.data['message'] ?? 'Failed to delete order.';
+      if (e.response?.data is Map && (e.response?.data as Map).containsKey('message')) {
+        _error = e.response?.data['message'];
+      } else {
+         // Fallback for non-JSON errors (like 500 HTML) or missing 'message' key
+        _error = 'Failed to delete order. Server returned status ${e.response?.statusCode}';
+      }
     } catch (e) {
       _error = 'An unexpected error occurred: $e';
     } finally {

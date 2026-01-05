@@ -42,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
         case 'success':
           // Fetch home data immediately after successful login
           Provider.of<ProductProvider>(context, listen: false).fetchHomeData();
-          Provider.of<NotificationProvider>(context, listen: false).registerDevice();
+          Provider.of<NotificationProvider>(context, listen: false).registerDevice(null, true);
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const MainScreen()),
           );

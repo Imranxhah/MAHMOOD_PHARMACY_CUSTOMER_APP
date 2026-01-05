@@ -31,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<BannerProvider>(context, listen: false).fetchBanners();
+      Provider.of<NotificationProvider>(context, listen: false).fetchNotifications();
     });
   }
 

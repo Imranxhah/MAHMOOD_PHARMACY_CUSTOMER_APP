@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:customer_app/src/api/api_client.dart';
 import 'package:customer_app/src/services/secure_storage_service.dart';
 import 'package:customer_app/src/models/user_model.dart';
@@ -266,6 +267,19 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> logout() async {
+    try {
+      // 1. Get current token
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        // 2. Delete from server
+        await _apiClient.deleteDeviceToken(fcmToken);
+        // 3. Delete locally
+        await FirebaseMessaging.instance.deleteToken();
+      }
+    } catch (e) {
+      debugPrint("Error deleting FCM token during logout: $e");
+    }
+
     await _storageService.deleteAll();
     _user = null;
     _isAdmin = false;

@@ -12,6 +12,10 @@ import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:customer_app/main.dart';
 import 'package:customer_app/src/common_widgets/pharmacy_loader.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+import 'package:customer_app/src/api/api_client.dart';
+import 'package:customer_app/src/features/splash/presentation/force_update_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -27,7 +31,6 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
-  late Animation<Offset> _slideAnimation;
   // Hippie Blue theme colors
   static const Color primaryColor = Color(0xFF4C9BEB); // Hippie Blue primary
   static const Color backgroundColor = Color(0xFFF8FCFF);
@@ -56,15 +59,16 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
 
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-        );
-
     _animationController.forward();
   }
 
   Future<void> _startAppInitialization() async {
+    // Check for app update first
+    final updateRequired = await _checkAppVersion();
+    if (updateRequired) return;
+
+    if (!mounted) return;
+
     // Force initialization of NotificationProvider to request permissions early
     Provider.of<NotificationProvider>(context, listen: false);
 
@@ -75,6 +79,66 @@ class _SplashScreenState extends State<SplashScreen>
     } else {
       authProvider.addListener(_authListener);
     }
+  }
+
+  Future<bool> _checkAppVersion() async {
+    try {
+      final apiClient = ApiClient();
+      final response = await apiClient.getAppVersion();
+      
+      if (response.statusCode == 200) {
+        final data = response.data;
+        bool forceUpdate = data['force_update'] ?? false;
+
+        if (!forceUpdate) {
+          return false;
+        }
+
+        String serverVersion = data['version'] ?? '1.0.0';
+        PackageInfo packageInfo = await PackageInfo.fromPlatform();
+        String localVersion = packageInfo.version;
+
+        if (_isServerVersionNewer(serverVersion, localVersion)) {
+          if (!mounted) return false;
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => ForceUpdateScreen(
+                message: data['message'] ?? 'A new version is available.',
+                storeUrl: data['store_url'],
+              ),
+            ),
+          );
+          return true;
+        }
+      }
+    } catch (e) {
+      debugPrint("Error checking app version: $e");
+      // Continue app flow on error
+    }
+    return false;
+  }
+
+  bool _isServerVersionNewer(String serverVersion, String localVersion) {
+    List<String> serverParts = serverVersion.split('.');
+    List<String> localParts = localVersion.split('.');
+
+    for (int i = 0; i < serverParts.length && i < localParts.length; i++) {
+      int serverPart = int.tryParse(serverParts[i]) ?? 0;
+      int localPart = int.tryParse(localParts[i]) ?? 0;
+
+      if (serverPart > localPart) {
+        return true;
+      } else if (serverPart < localPart) {
+        return false;
+      }
+    }
+    // If versions are same length and parts are equal, or if one version is longer but with 0s, 
+    // we can consider them equal or handle length mismatch. 
+    // Assuming semantic versioning (x.y.z), usually length is 3. 
+    // If server version has more parts (e.g. 1.0.0.1 vs 1.0.0), it's newer.
+    if (serverParts.length > localParts.length) return true;
+
+    return false;
   }
 
   void _authListener() {
@@ -240,54 +304,21 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          const SizedBox(height: 48),
+          const SizedBox(height: 16),
 
-          // App name - clean typography
-          SlideTransition(
-            position: _slideAnimation,
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                children: [
-                  Text(
-                    "Mahmood",
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 36,
-                      fontWeight: FontWeight.w700,
-                      color: primaryColor,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  Text(
-                    "Pharmacy",
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 28,
-                      fontWeight: FontWeight.w600,
-                      color: primaryColor,
-                      letterSpacing: 0.7,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Tagline
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Your Health, Our Priority",
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: lightTextColor,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+          // Tagline
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: Text(
+              "Your Health, Our Priority",
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: lightTextColor,
+                letterSpacing: 0.3,
               ),
+              textAlign: TextAlign.center,
             ),
           ),
 
@@ -301,7 +332,7 @@ class _SplashScreenState extends State<SplashScreen>
                 PharmacyLoader(size: 50, color: primaryColor, strokeWidth: 3.5),
                 const SizedBox(height: 24),
                 Text(
-                  "Preparing your healthcare experience...",
+                  "Loading your daily dose of wellness...",
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     color: lightTextColor,
@@ -432,7 +463,7 @@ class _SplashScreenState extends State<SplashScreen>
                     _error = null;
                   });
                   _animationController.forward(from: 0.0);
-                  _loadData();
+                  _startAppInitialization();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryColor,

@@ -1,10 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:awesome_notifications/awesome_notifications.dart' hide NotificationModel;
 import 'package:customer_app/src/api/api_client.dart';
 import 'package:customer_app/src/models/notification_model.dart';
 import 'package:dio/dio.dart';
-import 'package:awesome_notifications/awesome_notifications.dart' hide NotificationModel;
 import 'package:customer_app/src/services/secure_storage_service.dart';
 
 class NotificationProvider with ChangeNotifier {
@@ -20,10 +19,6 @@ class NotificationProvider with ChangeNotifier {
 
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
-  // Local Notifications
-  final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
-
   Future<void> init() async {
     // 1. Request Permission
     NotificationSettings settings = await FirebaseMessaging.instance.requestPermission(
@@ -31,52 +26,27 @@ class NotificationProvider with ChangeNotifier {
       badge: true,
       sound: true,
     );
+    
+    // Request AwesomeNotifications permission
+    bool isAllowed = await AwesomeNotifications().isNotificationAllowed();
+    if (!isAllowed) {
+      await AwesomeNotifications().requestPermissionToSendNotifications();
+    }
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      // 2. Init Local Notifications
-      const AndroidInitializationSettings initializationSettingsAndroid =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
-      
-      final DarwinInitializationSettings initializationSettingsDarwin =
-          DarwinInitializationSettings();
-
-      final InitializationSettings initializationSettings = InitializationSettings(
-        android: initializationSettingsAndroid,
-        iOS: initializationSettingsDarwin,
-      );
-
-      await _localNotificationsPlugin.initialize(initializationSettings);
-
-      // Create High Importance Channel for Android
-      const AndroidNotificationChannel channel = AndroidNotificationChannel(
-        'high_importance_channel', // id
-        'High Importance Notifications', // title
-        description: 'This channel is used for important notifications.', // description
-        importance: Importance.max,
-      );
-
-      await _localNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(channel);
-
-      // 3. Foreground Listener
+      // 2. Foreground Listener
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         RemoteNotification? notification = message.notification;
-        AndroidNotification? android = message.notification?.android;
 
         if (notification != null) {
-          _localNotificationsPlugin.show(
-            notification.hashCode,
-            notification.title,
-            notification.body,
-            NotificationDetails(
-              android: AndroidNotificationDetails(
-                channel.id,
-                channel.name,
-                channelDescription: channel.description,
-                icon: android?.smallIcon ?? '@mipmap/ic_launcher',
-              ),
+          AwesomeNotifications().createNotification(
+            content: NotificationContent(
+              id: notification.hashCode.abs(),
+              channelKey: 'high_importance_channel',
+              title: notification.title,
+              body: notification.body,
+              notificationLayout: NotificationLayout.Default,
+              icon: null,
             ),
           );
         } else if (message.data.isNotEmpty) {
@@ -84,17 +54,14 @@ class NotificationProvider with ChangeNotifier {
           String? body = message.data['body'];
           
           if (title != null && body != null) {
-            _localNotificationsPlugin.show(
-              message.hashCode,
-              title,
-              body,
-              NotificationDetails(
-                android: AndroidNotificationDetails(
-                  channel.id,
-                  channel.name,
-                  channelDescription: channel.description,
-                  icon: '@mipmap/ic_launcher',
-                ),
+            AwesomeNotifications().createNotification(
+              content: NotificationContent(
+                id: message.hashCode.abs(),
+                channelKey: 'high_importance_channel',
+                title: title,
+                body: body,
+                notificationLayout: NotificationLayout.Default,
+                icon: null,
               ),
             );
           }
@@ -110,23 +77,36 @@ class NotificationProvider with ChangeNotifier {
         }
       });
 
-      // 4. Token Refresh Listener
+      // 3. Token Refresh Listener
       FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
         registerDevice(newToken);
       });
 
-      // 5. Subscribe to Topics
+      // 4. Subscribe to Topics
       await FirebaseMessaging.instance.subscribeToTopic("all_users");
     }
   }
 
-  Future<void> registerDevice([String? token]) async {
+  Future<void> registerDevice([String? token, bool force = false]) async {
     try {
       final fcmToken = token ?? await FirebaseMessaging.instance.getToken();
       if (fcmToken != null) {
+        // Check if we already registered this token
+        if (!force) {
+          final savedToken = await _storageService.read('device_fcm_token');
+          if (savedToken == fcmToken) {
+            return;
+          }
+        }
+
         final response = await _apiClient.registerDevice(fcmToken);
+        
+        // Save the token locally after successful registration
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          await _storageService.write('device_fcm_token', fcmToken);
+        }
+
         if (kDebugMode) {
-          print("Device Registration Status: ${response.statusCode}");
           print("Device Registered with Token: $fcmToken");
         }
       }

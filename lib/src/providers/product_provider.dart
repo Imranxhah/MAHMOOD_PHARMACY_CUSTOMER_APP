@@ -98,12 +98,57 @@ class ProductProvider with ChangeNotifier {
     }
   }
 
-  Future<List<ProductModel>> fetchRelatedProducts(int categoryId) async {
+  Future<List<ProductModel>> fetchRelatedProducts(
+    int categoryId, {
+    String? genericName,
+  }) async {
     try {
-      final response = await _apiClient.getProducts(categoryId: categoryId);
-      if (response.statusCode == 200) {
-        final List<dynamic> data = response.data;
-        return data.map((json) => ProductModel.fromJson(json)).toList();
+      // If generic name is available, we want Union (OR logic):
+      // Products with same Generic Name OR Products in same Category.
+      if (genericName != null && genericName.isNotEmpty) {
+        // Run both requests in parallel
+        final results = await Future.wait([
+          // 1. Fetch by Generic Name (Priority) - Do NOT send categoryId
+          _apiClient.getProducts(genericName: genericName),
+          // 2. Fetch by Category (Broad) - Do NOT send genericName
+          _apiClient.getProducts(categoryId: categoryId),
+        ]);
+
+        final genericMatchesResponse = results[0];
+        final categoryMatchesResponse = results[1];
+
+        List<ProductModel> combined = [];
+        Set<int> addedIds = {};
+
+        // 1. Add Generic Name Matches (Higher Priority)
+        if (genericMatchesResponse.statusCode == 200) {
+          final list = (genericMatchesResponse.data as List)
+              .map((json) => ProductModel.fromJson(json))
+              .toList();
+          for (var p in list) {
+            if (addedIds.add(p.id)) combined.add(p);
+          }
+        }
+
+        // 2. Add Category Matches (Lower Priority)
+        if (categoryMatchesResponse.statusCode == 200) {
+          final list = (categoryMatchesResponse.data as List)
+              .map((json) => ProductModel.fromJson(json))
+              .toList();
+          for (var p in list) {
+            if (addedIds.add(p.id)) combined.add(p);
+          }
+        }
+
+        debugPrint('API RESPONSE: Merged related products count: ${combined.length}');
+        return combined;
+      } else {
+        // Fallback: Just Category if no generic name
+        final response = await _apiClient.getProducts(categoryId: categoryId);
+        if (response.statusCode == 200) {
+          final List<dynamic> data = response.data;
+          return data.map((json) => ProductModel.fromJson(json)).toList();
+        }
       }
     } catch (e) {
       if (kDebugMode) {

@@ -30,9 +30,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          Provider.of<NotificationProvider>(context, listen: false).markAllRead();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 1,
         title: const Text(
@@ -375,7 +382,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           );
         },
       ),
-    );
+    ));
   }
 
   String _formatDate(DateTime date) {

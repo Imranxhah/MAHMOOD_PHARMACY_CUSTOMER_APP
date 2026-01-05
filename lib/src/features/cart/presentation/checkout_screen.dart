@@ -13,6 +13,7 @@ import 'package:customer_app/src/features/profile/presentation/order_history_scr
 import '../../../constants/app_sizes.dart';
 import '../../../constants/app_strings.dart';
 import '../../../common_widgets/custom_widgets.dart';
+import '../../../common_widgets/pharmacy_loader_with_background.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final List<Map<String, dynamic>> cartItems;
@@ -32,7 +33,6 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   final _formKey = GlobalKey<FormState>(); // Add GlobalKey for Form
-  int _selectedPaymentIndex = 0; // 0 for Cash on Delivery, 1 for Card
   String _selectedOrderType = "Normal"; // Default to Normal
   final TextEditingController _shippingAddressController =
       TextEditingController();
@@ -41,6 +41,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   BranchModel? _selectedBranch;
   AddressModel? _selectedAddress; // For address dropdown
   bool _isValidatingCart = true;
+  bool _isPlacingOrder = false;
   String? _cartValidationErrorMessage;
 
   @override
@@ -49,9 +50,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (widget.isBuyNow) {
       _selectedOrderType = "Quick";
     }
-    _validateCartItems();
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _validateCartItems();
       Provider.of<BranchProvider>(context, listen: false).fetchLocationAndData();
       Provider.of<AddressProvider>(
         context,
@@ -138,7 +139,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     final orderProvider = Provider.of<OrderProvider>(context, listen: false);
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
-    final paymentMethod = _selectedPaymentIndex == 0 ? "COD" : "PAYED";
+    const paymentMethod = "COD";
+
+    setState(() {
+      _isPlacingOrder = true;
+    });
 
     try {
       // Unify order placement to always use orderProvider.placeOrder
@@ -180,6 +185,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     } catch (e) {
       if (!mounted) return;
       _showErrorDialog("Order Failed", e.toString());
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPlacingOrder = false;
+        });
+      }
     }
   }
 
@@ -207,15 +218,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.checkout)),
-      body: _isValidatingCart
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSizes.p16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+      body: Stack(
+        children: [
+          _isValidatingCart
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppSizes.p16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                   // Order Type Selection
                   Text(
                     "Order Type",
@@ -290,7 +303,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               style: TextStyle(fontStyle: FontStyle.italic),
                             ),
                             const SizedBox(height: AppSizes.p8),
-                            ElevatedButton.icon(
+                            ElevatedButton(
                               onPressed: () {
                                 Navigator.push(
                                   context,
@@ -299,8 +312,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                           const AddressListScreen()),
                                 );
                               },
-                              icon: const Icon(Icons.add_location_alt),
-                              label: const Text("Add New Address"),
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 12),
@@ -309,6 +320,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       BorderRadius.circular(AppSizes.radius8),
                                 ),
                               ),
+                              child: const Text("Add New Address"),
                             ),
                             const SizedBox(height: AppSizes.p16),
                           ],
@@ -333,8 +345,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             value: address,
                             child: Text(
                               address.address,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
                             ),
                           );
                         }).toList(),
@@ -362,6 +374,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   CustomTextField(
                     controller: _shippingAddressController,
                     hint: "e.g., House No. 123, Street 45, City",
+                    maxLines: 3,
                     validator: (value) =>
                         value!.isEmpty ? "Address cannot be empty" : null,
                   ),
@@ -406,62 +419,77 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           child: CircularProgressIndicator(),
                         );
                       }
+
+                      // If we have branches (either nearest or fallback), show the dropdown
+                      if (branchProvider.foundBranches.isNotEmpty) {
+                        // Auto-select the first branch if none is selected
+                        if (_selectedBranch == null) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            setState(() {
+                              _selectedBranch = branchProvider.foundBranches.first;
+                            });
+                          });
+                        }
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (branchProvider.currentPosition == null)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: Text(
+                                  "Please select the nearest branch manually because location services are disabled.",
+                                  style: TextStyle(
+                                    color: Colors.orange[800],
+                                    fontSize: 12,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ),
+                            DropdownButtonFormField<BranchModel>(
+                              value: _selectedBranch,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                              ),
+                              hint: const Text("Choose a branch"),
+                              isExpanded: true,
+                              items: branchProvider.foundBranches.map((branch) {
+                                final distanceStr = branch.distanceKm != null 
+                                  ? " (${branch.distanceKm!.toStringAsFixed(1)} km)" 
+                                  : "";
+                                return DropdownMenuItem<BranchModel>(
+                                  value: branch,
+                                  child: Text(
+                                    "${branch.name}$distanceStr",
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedBranch = value;
+                                });
+                              },
+                            ),
+                          ],
+                        );
+                      }
+
+                      // If no branches found at all (real error)
                       if (branchProvider.locationError != null) {
                         return Text(
-                          "Location Error: ${branchProvider.locationError!}",
+                          branchProvider.locationError!,
                           style: const TextStyle(color: Colors.red),
                         );
                       }
-                      if (branchProvider.error != null) {
-                        return Text(
-                          "Branch Error: ${branchProvider.error!}",
-                          style: const TextStyle(color: Colors.red),
-                        );
-                      }
-                      if (branchProvider.foundBranches.isEmpty) {
-                        return const Text(
-                            "No branches found near your location.");
-                      }
-
-                      // Auto-select the first nearest branch if none is selected
-                      if (_selectedBranch == null &&
-                          branchProvider.foundBranches.isNotEmpty) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          setState(() {
-                            _selectedBranch = branchProvider.foundBranches.first;
-                          });
-                        });
-                      }
-
-                      return DropdownButtonFormField<BranchModel>(
-                        value: _selectedBranch,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                        hint: const Text("Choose a branch"),
-                        isExpanded: true, // Prevent overflow
-                        items: branchProvider.foundBranches.map((branch) {
-                          return DropdownMenuItem<BranchModel>(
-                            value: branch,
-                            child: Text(
-                              "${branch.name} (${branch.distanceKm?.toStringAsFixed(1)} km)",
-                              overflow: TextOverflow
-                                  .ellipsis, // Handle text overflow
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedBranch = value;
-                          });
-                        },
-                      );
+                      
+                      return const Text("No branches available at the moment.");
                     },
                   ),
                   const SizedBox(height: AppSizes.p24),
@@ -475,47 +503,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   const SizedBox(height: AppSizes.p12),
                   Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSizes.p16),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(AppSizes.radius12),
+                      border: Border.all(color: Theme.of(context).dividerColor),
                     ),
-                    child: Column(
+                    child: Row(
                       children: [
-                        ListTile(
-                          title: const Text(AppStrings.cashOnDelivery),
-                          leading: Radio<int>(
-                            value: 0,
-                            groupValue: _selectedPaymentIndex,
-                            onChanged: (int? value) {
-                              setState(() {
-                                _selectedPaymentIndex = value!;
-                              });
-                            },
+                        const Icon(Icons.money, color: Colors.green),
+                        const SizedBox(width: 12),
+                        Text(
+                          AppStrings.cashOnDelivery,
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
                           ),
-                          onTap: () {
-                            setState(() {
-                              _selectedPaymentIndex = 0;
-                            });
-                          },
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
-                          title: const Text(AppStrings.creditDebitCard),
-                          subtitle: const Text("**** **** **** 1234"),
-                          leading: Radio<int>(
-                            value: 1,
-                            groupValue: _selectedPaymentIndex,
-                            onChanged: (int? value) {
-                              setState(() {
-                                _selectedPaymentIndex = value!;
-                              });
-                            },
-                          ),
-                          onTap: () {
-                            setState(() {
-                              _selectedPaymentIndex = 1;
-                            });
-                          },
                         ),
                       ],
                     ),
@@ -586,6 +589,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ),
           ),
+          if (_isPlacingOrder)
+            Container(
+              color: Colors.black.withOpacity(0.3),
+              child: const PharmacyLoaderWithBackground(),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -28,7 +28,7 @@ class _OTPScreenState extends State<OTPScreen> {
   @override
   void initState() {
     super.initState();
-    _resendOtp(); // Automatically request OTP when screen loads
+    _startCountdown(); // Start countdown assuming OTP was sent by previous screen
   }
 
   @override

@@ -191,10 +191,9 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
             onRefresh: _refresh,
             child: ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(AppSizes.p16),
+              padding: const EdgeInsets.all(12),
               itemCount: prescriptionProvider.prescriptions.length,
-              separatorBuilder: (ctx, i) =>
-                  const SizedBox(height: AppSizes.p20),
+              separatorBuilder: (ctx, i) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final prescription = prescriptionProvider.prescriptions[index];
                 return _buildPrescriptionCard(context, prescription);
@@ -223,51 +222,64 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
     PrescriptionModel prescription,
   ) {
     final theme = Theme.of(context);
-    const double cardRadius = 16.0;
+    const double cardRadius = 12.0;
 
     return Card(
       elevation: 2,
-      shadowColor: theme.shadowColor.withOpacity(0.2),
+      margin: EdgeInsets.zero,
+      shadowColor: theme.shadowColor.withOpacity(0.15),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(cardRadius),
         side: BorderSide(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+          color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+          width: 0.5,
         ),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Image Header
+          // Full Image Display with Status Badge
           Stack(
             children: [
-              Container(
-                height: 180,
-                width: double.infinity,
-                color: theme.colorScheme.surfaceContainerHighest,
-                child: prescription.imageUrl.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: prescription.imageUrl,
-                        fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) =>
-                            _buildImagePlaceholder(theme),
-                      )
-                    : _buildImagePlaceholder(theme),
+              GestureDetector(
+                onTap: () => _showFullImage(context, prescription.imageUrl),
+                child: AspectRatio(
+                  aspectRatio: 4 / 3, // Maintain aspect ratio for full image
+                  child: Container(
+                    width: double.infinity,
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    child: prescription.imageUrl.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: prescription.imageUrl,
+                            fit: BoxFit
+                                .contain, // Show full image without cropping
+                            placeholder: (_, __) => Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            errorWidget: (_, __, ___) =>
+                                _buildImagePlaceholder(theme),
+                          )
+                        : _buildImagePlaceholder(theme),
+                  ),
+                ),
               ),
+              // Status Badge
               Positioned(
-                top: 12,
-                right: 12,
+                top: 8,
+                right: 8,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                    horizontal: 10,
+                    vertical: 4,
                   ),
                   decoration: BoxDecoration(
                     color: _getStatusColor(prescription.status, context),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withOpacity(0.2),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -278,7 +290,7 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
                     children: [
                       Icon(
                         _getStatusIcon(prescription.status),
-                        size: 14,
+                        size: 12,
                         color: Colors.white,
                       ),
                       const SizedBox(width: 4),
@@ -287,6 +299,7 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
+                          fontSize: 10,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -294,80 +307,76 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
                   ),
                 ),
               ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface.withOpacity(0.9),
-                    borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    prescription.createdAt.toLocal().toString().split(' ')[0],
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
+
+          // Compact Information Section
           Padding(
-            padding: const EdgeInsets.all(AppSizes.p16),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                if (prescription.notes != null &&
-                    prescription.notes!.isNotEmpty) ...[
-                  Text(
-                    "Your Notes",
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.secondary,
+                // Date
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      size: 14,
+                      color: theme.colorScheme.primary,
                     ),
-                  ),
-                  const SizedBox(height: 4),
+                    const SizedBox(width: 6),
+                    Text(
+                      prescription.createdAt.toLocal().toString().split(' ')[0],
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Address (if available)
+                if (prescription.address.isNotEmpty) ...[
+                  const SizedBox(height: 8),
                   Text(
-                    prescription.notes!,
-                    style: theme.textTheme.bodyMedium,
+                    prescription.address,
+                    style: theme.textTheme.bodySmall,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: AppSizes.p16),
                 ],
+
+                // Admin Feedback (if available)
                 if (prescription.adminFeedback != null &&
-                    prescription.adminFeedback!.isNotEmpty)
+                    prescription.adminFeedback!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
                   Container(
                     width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: AppSizes.p12),
-                    padding: const EdgeInsets.all(AppSizes.p12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.errorContainer.withOpacity(0.15),
                       border: Border.all(
-                        color: theme.colorScheme.error.withOpacity(0.2),
+                        color: theme.colorScheme.error.withOpacity(0.3),
+                        width: 1,
                       ),
-                      borderRadius: BorderRadius.circular(AppSizes.radius8),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Row(
                           children: [
                             Icon(
                               Icons.info_outline,
-                              size: 16,
+                              size: 14,
                               color: theme.colorScheme.error,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Text(
-                              "Pharmacist Feedback:",
-                              style: theme.textTheme.labelMedium?.copyWith(
+                              "Pharmacist Feedback",
+                              style: theme.textTheme.labelSmall?.copyWith(
                                 color: theme.colorScheme.error,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -381,29 +390,48 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
                             fontStyle: FontStyle.italic,
                             color: theme.colorScheme.onSurface,
                           ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
+                ],
+
+                // Action Buttons (only for pending status)
                 if (prescription.status.toLowerCase() == 'pending') ...[
-                  const Divider(height: 24),
+                  const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       TextButton.icon(
                         onPressed: () => _showEditSheet(context, prescription),
-                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        icon: const Icon(Icons.edit_outlined, size: 16),
                         label: const Text("Edit"),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       FilledButton.icon(
                         onPressed: () =>
                             _showDeleteConfirmation(context, prescription.id),
-                        icon: const Icon(Icons.delete_outline, size: 18),
+                        icon: const Icon(Icons.delete_outline, size: 16),
                         label: const Text("Delete"),
                         style: FilledButton.styleFrom(
                           backgroundColor: theme.colorScheme.errorContainer,
                           foregroundColor: theme.colorScheme.onErrorContainer,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                       ),
                     ],
@@ -424,13 +452,13 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
         children: [
           Icon(
             Icons.image_not_supported_outlined,
-            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
-            size: 32,
+            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+            size: 40,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
-            "No Image",
-            style: theme.textTheme.labelSmall?.copyWith(
+            "No Image Available",
+            style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
             ),
           ),
@@ -439,25 +467,52 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
     );
   }
 
-  // REPLACED: AlertDialog with ModalBottomSheet to fix keyboard overflow
+  void _showFullImage(BuildContext context, String imageUrl) {
+    if (imageUrl.isEmpty) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.black,
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.contain,
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                onPressed: () => Navigator.pop(ctx),
+                icon: const Icon(Icons.close, color: Colors.white),
+                style: IconButton.styleFrom(backgroundColor: Colors.black54),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showEditSheet(BuildContext context, PrescriptionModel prescription) {
     final theme = Theme.of(context);
-    final notesController = TextEditingController(text: prescription.notes);
+    final addressController = TextEditingController(text: prescription.address);
     final contactController = TextEditingController(
       text: prescription.contactNumber,
     );
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Enables full height & keyboard avoidance
+      isScrollControlled: true,
       backgroundColor: theme.colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom, // Avoid keyboard
-        ),
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -465,7 +520,6 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Drag Handle
                 Center(
                   child: Container(
                     width: 40,
@@ -477,7 +531,6 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
                     ),
                   ),
                 ),
-                // Title
                 Text(
                   "Edit Prescription",
                   style: theme.textTheme.headlineSmall?.copyWith(
@@ -492,8 +545,6 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Form Fields
                 TextField(
                   controller: contactController,
                   decoration: const InputDecoration(
@@ -506,19 +557,16 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
                 ),
                 const SizedBox(height: 16),
                 TextField(
-                  controller: notesController,
+                  controller: addressController,
                   decoration: const InputDecoration(
-                    labelText: "Notes",
-                    hintText: "Add any additional details...",
-                    prefixIcon: Icon(Icons.sticky_note_2_outlined),
+                    labelText: "Address",
+                    hintText: "Enter delivery address...",
                     alignLabelWithHint: true,
                   ),
                   maxLines: 4,
                   textInputAction: TextInputAction.done,
                 ),
                 const SizedBox(height: 32),
-
-                // Action Buttons
                 Row(
                   children: [
                     Expanded(
@@ -544,7 +592,7 @@ class _MyPrescriptionsScreenState extends State<MyPrescriptionsScreen> {
                               listen: false,
                             ).updatePrescription(
                               prescription.id,
-                              notes: notesController.text,
+                              address: addressController.text,
                               contactNumber: contactController.text,
                             );
                             if (context.mounted) {

@@ -156,7 +156,8 @@ class SettingsScreen extends StatelessWidget {
                         MaterialPageRoute(
                           builder: (_) => const WebViewScreen(
                             title: "Privacy Policy",
-                            url: "https://mahmoodpharmacy.com.pk/privacy-policy/",
+                            url:
+                                "https://mahmoodpharmacy.com.pk/privacy-policy/",
                           ),
                         ),
                       ),
@@ -169,7 +170,8 @@ class SettingsScreen extends StatelessWidget {
                         MaterialPageRoute(
                           builder: (_) => const WebViewScreen(
                             title: "Terms of Service",
-                            url: "https://mahmoodpharmacy.com.pk/terms-of-service/",
+                            url:
+                                "https://mahmoodpharmacy.com.pk/terms-of-service/",
                           ),
                         ),
                       ),
@@ -195,7 +197,8 @@ class SettingsScreen extends StatelessWidget {
                         MaterialPageRoute(
                           builder: (_) => const WebViewScreen(
                             title: "Contact Us",
-                            url: "https://mahmoodpharmacy.com.pk/complaint-form/",
+                            url:
+                                "https://mahmoodpharmacy.com.pk/complaint-form/",
                           ),
                         ),
                       ),
@@ -242,53 +245,284 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildProfileHeader(BuildContext context, user, ThemeData theme) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSizes.p24),
+      margin: const EdgeInsets.all(AppSizes.p16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primary,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(AppSizes.radius24),
-          bottomRight: Radius.circular(AppSizes.radius24),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.primary.withOpacity(0.8),
+          ],
         ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.onPrimary.withOpacity(0.2),
-              shape: BoxShape.circle,
-              border: Border.all(color: theme.colorScheme.onPrimary, width: 3),
-            ),
-            child: Icon(
-              Icons.person,
-              size: 40,
-              color: theme.colorScheme.onPrimary,
-            ),
-          ),
-          const SizedBox(height: AppSizes.p12),
-          Text(
-            '${user.firstName} ${user.lastName}',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: theme.colorScheme.onPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: AppSizes.p4),
-          Text(
-            user.email,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onPrimary.withOpacity(0.9),
-            ),
-          ),
-          const SizedBox(height: AppSizes.p4),
-          Text(
-            user.mobile,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onPrimary.withOpacity(0.9),
-            ),
+        borderRadius: BorderRadius.circular(AppSizes.radius24),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppSizes.radius24),
+        child: Stack(
+          children: [
+            // Decorative circles in background - clipped properly
+            Positioned(
+              top: -30,
+              right: -30,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: theme.colorScheme.onPrimary.withOpacity(0.08),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -40,
+              left: -40,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: theme.colorScheme.onPrimary.withOpacity(0.06),
+                ),
+              ),
+            ),
+
+            // Main content
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSizes.p16, // Reduced vertical padding
+                horizontal: AppSizes.p24,
+              ),
+              child: Column(
+                children: [
+                  // Profile Avatar with initials
+                  Stack(
+                    children: [
+                      // Outer glow ring
+                      Container(
+                        width: 80, // Reduced from 100
+                        height: 80, // Reduced from 100
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              theme.colorScheme.onPrimary.withOpacity(0.3),
+                              theme.colorScheme.onPrimary.withOpacity(0.1),
+                            ],
+                          ),
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 70, // Reduced from 88
+                            height: 70, // Reduced from 88
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: theme.colorScheme.surface,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.25),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                            child: Container(
+                              margin: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    theme.brightness == Brightness.dark
+                                        ? const Color(0xFF2E3440)
+                                        : const Color(0xFFF8F9FA),
+                                    theme.brightness == Brightness.dark
+                                        ? const Color(0xFF3B4252)
+                                        : const Color(0xFFFFFFFF),
+                                  ],
+                                ),
+                                border: Border.all(
+                                  color: theme.brightness == Brightness.dark
+                                      ? theme.colorScheme.onPrimary.withOpacity(
+                                          0.2,
+                                        )
+                                      : theme.colorScheme.primary.withOpacity(
+                                          0.15,
+                                        ),
+                                  width: 2,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${user.firstName[0].toUpperCase()}${user.lastName[0].toUpperCase()}',
+                                  style: TextStyle(
+                                    fontSize: 24, // Reduced from 32
+                                    fontWeight: FontWeight.w700,
+                                    fontFamily: 'Poppins',
+                                    letterSpacing: 2,
+                                    foreground: Paint()
+                                      ..shader =
+                                          LinearGradient(
+                                            colors:
+                                                theme.brightness ==
+                                                    Brightness.dark
+                                                ? [
+                                                    theme.colorScheme.onPrimary,
+                                                    theme.colorScheme.onPrimary
+                                                        .withOpacity(0.8),
+                                                  ]
+                                                : [
+                                                    theme.colorScheme.primary,
+                                                    theme.colorScheme.primary
+                                                        .withOpacity(0.7),
+                                                  ],
+                                          ).createShader(
+                                            const Rect.fromLTWH(0, 0, 200, 70),
+                                          ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: AppSizes.p12), // Reduced from p16
+
+                  // User name with verified badge
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          '${user.firstName} ${user.lastName}',
+                          style: theme.textTheme.titleLarge?.copyWith( // Changed to titleLarge for slightly smaller text
+                            color: theme.colorScheme.onPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Poppins',
+                            letterSpacing: 0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: AppSizes.p8),
+                      Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.verified,
+                          size: 14, // Reduced from 16
+                          color: theme.colorScheme.onPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: AppSizes.p8), // Reduced from p12
+
+                  // Contact info cards
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSizes.p12, // Reduced from p16
+                      vertical: AppSizes.p8, // Reduced from p12
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.onPrimary.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(AppSizes.radius12),
+                      border: Border.all(
+                        color: theme.colorScheme.onPrimary.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        // Email
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.email_outlined,
+                              size: 16,
+                              color: theme.colorScheme.onPrimary.withOpacity(
+                                0.9,
+                              ),
+                            ),
+                            const SizedBox(width: AppSizes.p8),
+                            Flexible(
+                              child: Text(
+                                user.email,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onPrimary
+                                      .withOpacity(0.95),
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'Poppins',
+                                ),
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: AppSizes.p8),
+
+                        // Divider
+                        Container(
+                          height: 1,
+                          color: theme.colorScheme.onPrimary.withOpacity(0.2),
+                        ),
+
+                        const SizedBox(height: AppSizes.p8),
+
+                        // Phone
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.phone_outlined,
+                              size: 16,
+                              color: theme.colorScheme.onPrimary.withOpacity(
+                                0.9,
+                              ),
+                            ),
+                            const SizedBox(width: AppSizes.p8),
+                            Text(
+                              user.mobile,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onPrimary.withOpacity(
+                                  0.95,
+                                ),
+                                fontWeight: FontWeight.w500,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -465,12 +699,23 @@ class SettingsScreen extends StatelessWidget {
     AuthProvider authProvider,
     ThemeData theme,
   ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: () {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(AppSizes.radius12),
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
             showDialog(
               context: context,
               builder: (ctx) => AlertDialog(
@@ -507,16 +752,43 @@ class SettingsScreen extends StatelessWidget {
               ),
             );
           },
-          icon: const Icon(Icons.logout),
-          label: const Text("Logout"),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: theme.colorScheme.error,
-            foregroundColor: theme.colorScheme.onError,
-            padding: const EdgeInsets.symmetric(vertical: AppSizes.p16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSizes.radius12),
+          borderRadius: BorderRadius.circular(AppSizes.radius12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.p16,
+              vertical: AppSizes.p16,
             ),
-            elevation: 0,
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.error.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(AppSizes.radius8),
+                  ),
+                  child: Icon(
+                    Icons.logout_rounded,
+                    size: 22,
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+                const SizedBox(width: AppSizes.p16),
+                Expanded(
+                  child: Text(
+                    "Logout",
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: theme.colorScheme.onSurface.withOpacity(0.4),
+                ),
+              ],
+            ),
           ),
         ),
       ),

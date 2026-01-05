@@ -674,14 +674,19 @@ class _BranchesScreenState extends State<BranchesScreen> {
                 // Action Button
                 SizedBox(
                   width: double.infinity,
-                  child: OutlinedButton.icon(
+                  child: ElevatedButton.icon(
                     onPressed: () => _openInMaps(branch, branchProvider),
-                    icon: Icon(Icons.map_rounded, size: 18),
-                    label: const Text('Get Directions'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colorScheme.primary,
-                      side: BorderSide(color: colorScheme.primary),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    icon: const Icon(Icons.map_rounded, size: 18),
+                    label: const Text(
+                      'Get Directions',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      elevation: 2,
+                      shadowColor: colorScheme.primary.withOpacity(0.3),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

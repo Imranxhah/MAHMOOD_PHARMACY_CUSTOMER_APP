@@ -5,7 +5,7 @@ class PrescriptionModel {
   final String status;
   final String imageUrl;
   final DateTime createdAt;
-  final String? notes; // For upload
+  final String address; // For upload
   final String? adminFeedback; // For list response
   final int branch; // Added branch ID
   final String contactNumber; // Added contact number
@@ -15,7 +15,7 @@ class PrescriptionModel {
     required this.status,
     required this.imageUrl,
     required this.createdAt,
-    this.notes,
+    required this.address,
     this.adminFeedback,
     required this.branch,
     required this.contactNumber,
@@ -36,7 +36,7 @@ class PrescriptionModel {
       status: json['status'],
       imageUrl: imageUrl ?? '',
       createdAt: DateTime.parse(json['created_at']),
-      notes: json['notes'],
+      address: json['address'] ?? '',
       adminFeedback: json['admin_feedback'],
       branch: json['branch'],
       contactNumber: json['contact_number'] ?? '',
@@ -49,7 +49,7 @@ class PrescriptionModel {
       'status': status,
       'image': imageUrl,
       'created_at': createdAt.toIso8601String(),
-      'notes': notes,
+      'address': address,
       'admin_feedback': adminFeedback,
       'branch': branch,
       'contact_number': contactNumber,

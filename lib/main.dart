@@ -1,9 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:awesome_notifications/awesome_notifications.dart'; // Import awesome_notifications
+import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:customer_app/src/utils/notification_utils.dart';
 import 'src/constants/app_theme.dart';
 import 'src/providers/auth_provider.dart';
 import 'src/providers/product_provider.dart';
@@ -14,58 +15,45 @@ import 'src/providers/branch_provider.dart';
 import 'src/providers/address_provider.dart';
 import 'src/providers/theme_provider.dart';
 import 'src/providers/banner_provider.dart';
-import 'src/providers/notification_provider.dart'; // Import NotificationProvider
+import 'src/providers/notification_provider.dart';
 import 'src/features/splash/presentation/splash_screen.dart';
 
 // Top-level function for handling background messages
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  // ignore: avoid_print
-  print("Handling a background message: ${message.messageId}");
+  try {
+    await NotificationUtils.initializeNotifications();
+    
+    // If the message is data-only (no notification payload), try to show it.
+    if (message.notification == null && message.data.isNotEmpty) {
+      String? title = message.data['title'];
+      String? body = message.data['body'];
 
-
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
-
-  const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'high_importance_channel', // id
-    'High Importance Notifications', // title
-    description: 'This channel is used for important notifications.',
-    importance: Importance.max,
-  );
-
-  await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(channel);
-
-  // If the message is data-only (no notification payload), try to show it.
-  if (message.notification == null && message.data.isNotEmpty) {
-    String? title = message.data['title'];
-    String? body = message.data['body'];
-
-    if (title != null && body != null) {
-      await flutterLocalNotificationsPlugin.show(
-        message.hashCode,
-        title,
-        body,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            channel.id,
-            channel.name,
-            channelDescription: channel.description,
-            icon: '@mipmap/ic_launcher',
+      if (title != null && body != null) {
+        await AwesomeNotifications().createNotification(
+          content: NotificationContent(
+            id: message.hashCode.abs(),
+            channelKey: 'high_importance_channel',
+            title: title,
+            body: body,
+            notificationLayout: NotificationLayout.Default,
+            icon: null,
           ),
-        ),
-      );
+        );
+      }
     }
-  }
 
-  // Update badge count for background messages
-  if (message.data.containsKey('badge')) {
-    int badgeCount = int.tryParse(message.data['badge']!) ?? 0;
-    AwesomeNotifications().setGlobalBadgeCounter(badgeCount);
+    // Update badge count for background messages
+    if (message.data.containsKey('badge')) {
+      int badgeCount = int.tryParse(message.data['badge']!) ?? 0;
+      AwesomeNotifications().setGlobalBadgeCounter(badgeCount);
+    }
+  } catch (e, stack) {
+    if (kDebugMode) {
+      print("Error in background handler: $e");
+      print(stack);
+    }
   }
 }
 
@@ -74,16 +62,22 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 // Function to handle navigation based on notification data
 void handleNotificationNavigation(RemoteMessage message) {
+  // Navigation Guard: Ensure navigator is mounted
+  if (navigatorKey.currentState == null) {
+    // Determine if we need to store this as a pending action in a provider
+    // For now, we return to avoid crashing.
+    if (kDebugMode) {
+      print("Navigator not ready. Skipping direct navigation.");
+    }
+    return;
+  }
+
   if (message.data.containsKey('type')) {
     final type = message.data['type'];
     final orderId = message.data['order_id']; // Assuming order_id is always a String
     
     // Perform navigation based on the type and orderId
     if (type == 'order_update' && orderId != null) {
-      // Navigate to the OrderDetailsScreen.
-      // This requires the screen to be defined and potentially accept arguments.
-      // For now, we'll just print, and proper navigation should be implemented
-      // within the app's routing system (e.g., go_router, named routes).
       print("Navigating to order details for order ID: $orderId");
       // Example: navigatorKey.currentState?.pushNamed('/order_details', arguments: orderId);
     }
@@ -94,6 +88,10 @@ void handleNotificationNavigation(RemoteMessage message) {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  
+  // Initialize AwesomeNotifications
+  await NotificationUtils.initializeNotifications();
+
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   // Handle message received when the app is in the background or terminated
