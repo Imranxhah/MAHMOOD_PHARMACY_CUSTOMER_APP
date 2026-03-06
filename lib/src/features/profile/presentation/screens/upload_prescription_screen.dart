@@ -28,6 +28,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
   XFile? _imageFile;
   final TextEditingController _contactNumberController = TextEditingController();
   final TextEditingController _shippingAddressController = TextEditingController();
+  final TextEditingController _noteController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isUploading = false;
   String? _contactNumberError; // To display backend validation errors
@@ -88,6 +89,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
         contactNumber: _contactNumberController.text,
         branchId: _selectedBranch!.id,
         address: _shippingAddressController.text,
+        note: _noteController.text,
       );
       if (!mounted) return;
       _showSnackBar("Prescription uploaded successfully!", Colors.green);
@@ -156,6 +158,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
   void dispose() {
     _contactNumberController.dispose();
     _shippingAddressController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -355,6 +358,21 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                     maxLines: 3,
                     validator: (value) =>
                         value!.isEmpty ? "Address cannot be empty" : null,
+                  ),
+                  const SizedBox(height: AppSizes.p24),
+
+                  // Note Field (Optional)
+                  Text(
+                    "Note for Pharmacist (Optional)",
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.p12),
+                  CustomTextField(
+                    controller: _noteController,
+                    hint: "e.g., Please deliver in evening",
+                    maxLines: 3,
                   ),
                   const SizedBox(height: AppSizes.p24),
 

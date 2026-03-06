@@ -24,6 +24,7 @@ class OrderProvider with ChangeNotifier {
     int? branchId,
     String? paymentMethod,
     String orderType = "Normal",
+    bool useLoyaltyPoints = false,
   }) async {
     _isLoading = true;
     _error = null;
@@ -37,6 +38,7 @@ class OrderProvider with ChangeNotifier {
         if (branchId != null) "branch_id": branchId,
         if (paymentMethod != null) "payment_method": paymentMethod,
         "order_type": orderType,
+        "use_loyalty_points": useLoyaltyPoints,
       });
       if (response.statusCode == 201) {
         _orders.insert(
@@ -89,24 +91,31 @@ class OrderProvider with ChangeNotifier {
   }
 
   Future<void> getOrderDetail(int orderId) async {
+    bool hasLocalData = false;
     // Check if order exists locally first
     try {
       final localOrder = _orders.firstWhere((o) => o.id == orderId);
       _selectedOrder = localOrder;
+      hasLocalData = true;
       notifyListeners();
-      // Optionally fetch fresh data in background if needed, but for now we rely on cache
-      return; 
     } catch (_) {
-      // Order not found locally, proceed to fetch
+      // Order not found locally
     }
 
-    _isLoading = true;
+    if (!hasLocalData) {
+      _isLoading = true;
+      notifyListeners();
+    }
+    
     _error = null;
-    notifyListeners();
 
     try {
       final response = await _apiClient.getOrderDetail(orderId);
       if (response.statusCode == 200) {
+        // DEBUG: Log full API response
+        // ignore: avoid_print
+        print('DEBUG: getOrderDetail API Response: ${response.data}');
+        
         _selectedOrder = Order.fromJson(response.data);
       }
     } on DioException catch (e) {
@@ -208,6 +217,41 @@ class OrderProvider with ChangeNotifier {
         'valid': false,
         'errors': [_error],
       };
+    }
+  }
+
+  bool _isValidatingAmount = false;
+  String? _amountValidationError;
+  bool _isAmountValid = false;
+
+  bool get isValidatingAmount => _isValidatingAmount;
+  String? get amountValidationError => _amountValidationError;
+  bool get isAmountValid => _isAmountValid;
+
+  Future<void> validateMinimumOrderAmount(double totalAmount) async {
+    _isValidatingAmount = true;
+    _amountValidationError = null;
+    _isAmountValid = false;
+    notifyListeners();
+
+    try {
+      final response = await _apiClient.validateOrderAmount(totalAmount);
+      if (response.statusCode == 200) {
+        _isAmountValid = true;
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 400) {
+         _amountValidationError = e.response?.data['error'] ?? 'Invalid amount.';
+      } else if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
+        _amountValidationError = e.response?.data['detail'] ?? 'Authentication failed.';
+      } else {
+        _amountValidationError = 'Failed to validate amount.';
+      }
+    } catch (e) {
+      _amountValidationError = 'An unexpected error occurred: $e';
+    } finally {
+      _isValidatingAmount = false;
+      notifyListeners();
     }
   }
 }

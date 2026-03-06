@@ -169,6 +169,10 @@ class ApiClient {
     return await _dio.post('orders/', data: orderData);
   }
 
+  Future<Response> validateOrderAmount(double totalAmount) async {
+    return await _dio.post('orders/validate-amount/', data: {'total_amount': totalAmount});
+  }
+
   Future<Response> listOrders() async {
     return await _dio.get('orders/');
   }
@@ -206,14 +210,21 @@ class ApiClient {
     required String contactNumber,
     required int branchId,
     required String address,
+    String? note,
   }) async {
     String fileName = image.path.split('/').last;
-    FormData formData = FormData.fromMap({
+    final Map<String, dynamic> data = {
       "image": await MultipartFile.fromFile(image.path, filename: fileName),
       "contact_number": contactNumber,
       "branch": branchId,
       "address": address,
-    });
+    };
+    
+    if (note != null && note.isNotEmpty) {
+      data['note'] = note;
+    }
+
+    FormData formData = FormData.fromMap(data);
     return await _dio.post(
       'prescriptions/upload/',
       data: formData,

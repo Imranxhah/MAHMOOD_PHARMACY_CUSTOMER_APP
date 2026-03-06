@@ -77,7 +77,7 @@ class CartScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  cartItem.product.name,
+                                  "${cartItem.product.name} (${cartItem.unitType})",
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -85,13 +85,23 @@ class CartScreen extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 4),
-                                  Text(
-                                    "PKR ${cartItem.product.price}",
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: Theme.of(context).colorScheme.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                                Builder(
+                                  builder: (context) {
+                                    String price = cartItem.product.price;
+                                    if (cartItem.unitType == 'Pack') {
+                                      price = cartItem.product.packPrice ?? price;
+                                    } else if (cartItem.unitType == 'Strip') {
+                                      price = cartItem.product.stripPrice ?? price;
+                                    }
+                                    return Text(
+                                      "PKR $price",
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: Theme.of(context).colorScheme.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    );
+                                  }
+                                ),
                               ],
                             ),
                           ),
@@ -102,6 +112,7 @@ class CartScreen extends StatelessWidget {
                                   cartProvider.updateItemQuantity(
                                     cartItem.product.id,
                                     cartItem.quantity - 1,
+                                    cartItem.unitType,
                                   );
                                 },
                                 icon: Icon(
@@ -122,6 +133,7 @@ class CartScreen extends StatelessWidget {
                                   cartProvider.updateItemQuantity(
                                     cartItem.product.id,
                                     cartItem.quantity + 1,
+                                    cartItem.unitType,
                                   );
                                 },
                                 icon: Icon(

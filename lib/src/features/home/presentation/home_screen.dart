@@ -170,10 +170,6 @@ class _HomeScreenState extends State<HomeScreen> {
             final unreadCount = notificationProvider.unreadCount;
             return IconButton(
               onPressed: () {
-                Provider.of<NotificationProvider>(
-                  context,
-                  listen: false,
-                ).markAllRead();
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const NotificationScreen()),
                 );

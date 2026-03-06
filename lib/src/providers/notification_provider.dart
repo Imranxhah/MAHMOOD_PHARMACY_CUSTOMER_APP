@@ -159,13 +159,7 @@ class NotificationProvider with ChangeNotifier {
 
     // Optimistic Update: Mark all as read locally first
     _notifications = _notifications.map((n) {
-      return NotificationModel(
-        id: n.id,
-        title: n.title,
-        body: n.body,
-        isRead: true,
-        createdAt: n.createdAt,
-      );
+      return n.copyWith(isRead: true);
     }).toList();
     notifyListeners();
 
@@ -186,13 +180,7 @@ class NotificationProvider with ChangeNotifier {
     // Optimistic update
     final index = _notifications.indexWhere((n) => n.id == id);
     if (index != -1) {
-      _notifications[index] = NotificationModel(
-        id: _notifications[index].id,
-        title: _notifications[index].title,
-        body: _notifications[index].body,
-        isRead: true,
-        createdAt: _notifications[index].createdAt,
-      );
+      _notifications[index] = _notifications[index].copyWith(isRead: true);
       notifyListeners();
     }
 

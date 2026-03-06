@@ -28,17 +28,35 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   bool _isLoadingRelated = false;
   bool _hasFetchedRelated = false;
   late ScrollController _scrollController;
+  String _selectedUnit = 'Default';
+  bool _isDescriptionExpanded = false;
 
   @override
   void initState() {
     super.initState();
     _currentProduct = widget.product;
+
+    // Set default unit based on availability
+    final bool hasPack = _currentProduct.packPrice != null && (double.tryParse(_currentProduct.packPrice!) ?? 0) > 0;
+    final bool hasSingle = (_currentProduct.pricePerPiece != null && (double.tryParse(_currentProduct.pricePerPiece!) ?? 0) > 0) ||
+                          (_currentProduct.stripPrice != null && (double.tryParse(_currentProduct.stripPrice!) ?? 0) > 0);
+
+    if (hasPack || hasSingle) {
+      if (hasSingle) {
+        _selectedUnit = 'Single';
+      } else {
+        _selectedUnit = 'Pack';
+      }
+    } else {
+      _selectedUnit = 'Default';
+    }
+
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    
+
     // Check if content fits on screen initially
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients && 
+      if (_scrollController.hasClients &&
           _scrollController.position.maxScrollExtent == 0) {
         _fetchRelatedProducts();
         _hasFetchedRelated = true;
@@ -53,11 +71,46 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     super.dispose();
   }
 
+  String _getDisplayPrice() {
+    switch (_selectedUnit) {
+      case 'Pack':
+        return _currentProduct.packPrice ?? _currentProduct.price;
+      case 'Single':
+        return _currentProduct.pricePerPiece ?? _currentProduct.stripPrice ?? _currentProduct.price;
+      default:
+        return _currentProduct.price;
+    }
+  }
+
+  int _getMaxStock() {
+    if (_selectedUnit == 'Pack') {
+      final int stripsInPack = _currentProduct.stripsInPack ?? 1;
+      // Prevent division by zero
+      if (stripsInPack <= 0) return 0;
+      // Stock is in strips for medicines with packs
+      return (_currentProduct.stock / stripsInPack).floor();
+    }
+    
+    // For Single or Default, we check directly against stock
+    return _currentProduct.stock;
+  }
+
+  String _calculateTotalPrice() {
+    final double unitPrice = double.tryParse(_getDisplayPrice()) ?? 0.0;
+    final double total = unitPrice * _quantity;
+
+    // Format: remove decimals if whole number
+    if (total % 1 == 0) {
+      return total.toInt().toString();
+    }
+    return total.toStringAsFixed(2);
+  }
+
   void _onScroll() {
     if (_scrollController.hasClients) {
       final maxScroll = _scrollController.position.maxScrollExtent;
       final currentScroll = _scrollController.position.pixels;
-      
+
       // Fetch when user scrolls to within 300px of the bottom
       if (maxScroll - currentScroll <= 300) {
         if (!_hasFetchedRelated && !_isLoadingRelated) {
@@ -71,20 +124,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   Future<void> _fetchRelatedProducts() async {
     if (!mounted) return;
-    
-    debugPrint('FETCH: Starting to fetch related products for category: ${_currentProduct.category} and generic: ${_currentProduct.genericName}');
-    
+
+    debugPrint(
+      'FETCH: Starting to fetch related products for category: ${_currentProduct.category} and generic: ${_currentProduct.genericName}',
+    );
+
     setState(() {
       _isLoadingRelated = true;
     });
     try {
-      final products = await Provider.of<ProductProvider>(
-        context,
-        listen: false,
-      ).fetchRelatedProducts(
-        _currentProduct.category,
-        genericName: _currentProduct.genericName,
-      );
+      final products =
+          await Provider.of<ProductProvider>(
+            context,
+            listen: false,
+          ).fetchRelatedProducts(
+            _currentProduct.category,
+            genericName: _currentProduct.genericName,
+          );
       if (mounted) {
         setState(() {
           _relatedProducts = products
@@ -104,9 +160,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   void _increment() {
-    setState(() {
-      _quantity++;
-    });
+    int maxStock = _getMaxStock();
+    if (_quantity < maxStock) {
+      setState(() {
+        _quantity++;
+      });
+    } else {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Maximum available quantity for $_selectedUnit is $maxStock",
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   void _decrement() {
@@ -176,12 +245,26 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       return;
     }
 
+    // Double check stock before proceeding
+    if (_quantity > _getMaxStock()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Insufficient stock for the selected quantity."),
+        ),
+      );
+      return;
+    }
+
     try {
-      final double price = double.tryParse(_currentProduct.price) ?? 0.0;
+      final double price = double.tryParse(_getDisplayPrice()) ?? 0.0;
       final double total = price * _quantity;
 
       final List<Map<String, dynamic>> buyNowItem = [
-        {'product_id': _currentProduct.id, 'quantity': _quantity},
+        {
+          'product_id': _currentProduct.id,
+          'quantity': _quantity,
+          'unit_type': _selectedUnit,
+        },
       ];
 
       Navigator.push(
@@ -248,6 +331,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ],
       ),
     );
+  }
+
+  void _updateUnit(String newUnit) {
+    setState(() {
+      _selectedUnit = newUnit;
+      _quantity = 1; // Reset quantity when unit changes
+    });
   }
 
   @override
@@ -448,7 +538,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       _currentProduct.genericName!.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
-                      _currentProduct.genericName!,
+                      "Generic Name: ${_currentProduct.genericName!}",
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                         fontStyle: FontStyle.italic,
@@ -456,7 +546,94 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                   ],
 
+                  if (_currentProduct.manufacturer != null &&
+                      _currentProduct.manufacturer!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.business_rounded,
+                          size: 16,
+                          color: colorScheme.primary.withOpacity(0.7),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            "Manufacturer: ${_currentProduct.manufacturer!}",
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
                   const SizedBox(height: 20),
+
+                  // Unit Selection
+                  if ((_currentProduct.packPrice != null && (double.tryParse(_currentProduct.packPrice!) ?? 0) > 0) ||
+                      (_currentProduct.stripPrice != null && (double.tryParse(_currentProduct.stripPrice!) ?? 0) > 0) ||
+                      (_currentProduct.pricePerPiece != null && (double.tryParse(_currentProduct.pricePerPiece!) ?? 0) > 0)) ...[
+                    Text(
+                      "Select Unit",
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        if ((_currentProduct.pricePerPiece != null && (double.tryParse(_currentProduct.pricePerPiece!) ?? 0) > 0) ||
+                            (_currentProduct.stripPrice != null && (double.tryParse(_currentProduct.stripPrice!) ?? 0) > 0))
+                          Expanded(
+                            child: RadioListTile<String>(
+                              title: Text(_currentProduct.pricePerPiece == null && _currentProduct.stripPrice != null ? "Strip" : "Single"),
+                              value: 'Single',
+                              groupValue: _selectedUnit,
+                              onChanged: (val) => _updateUnit(val!),
+                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                            ),
+                          ),
+                        if (_currentProduct.packPrice != null && (double.tryParse(_currentProduct.packPrice!) ?? 0) > 0)
+                          Expanded(
+                            child: RadioListTile<String>(
+                              title: const Text("Pack"),
+                              value: 'Pack',
+                              groupValue: _selectedUnit,
+                              onChanged: (val) => _updateUnit(val!),
+                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (_selectedUnit == 'Pack' && _currentProduct.stripsInPack != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          "1 Pack contains ${_currentProduct.stripsInPack} Strips",
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontStyle: FontStyle.italic,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    if (_selectedUnit == 'Single' && _currentProduct.tabletsInStrip != null && _currentProduct.pricePerPiece == null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          "1 Strip contains ${_currentProduct.tabletsInStrip} Tablets",
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontStyle: FontStyle.italic,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 20),
+                  ],
 
                   // Price and Quantity Row (Original Design)
                   Row(
@@ -474,7 +651,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               ),
                             ),
                             Text(
-                              "PKR ${_currentProduct.price}",
+                              "PKR ${_calculateTotalPrice()}",
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.headlineMedium?.copyWith(
@@ -487,7 +664,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
 
                       // Modern Capsule Quantity Selector (Original)
-                      if (_currentProduct.stock > 0)
+                      if (_getMaxStock() > 0)
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 4,
@@ -517,23 +694,28 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               ),
                               _QuantityButton(
                                 icon: Icons.add,
-                                onTap: () {
-                                  if (_quantity < _currentProduct.stock) {
-                                    _increment();
-                                  } else {
-                                    ScaffoldMessenger.of(
-                                      context,
-                                    ).clearSnackBars();
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text("Reached maximum stock"),
-                                      ),
-                                    );
-                                  }
-                                },
+                                onTap: _increment,
                                 colorScheme: colorScheme,
                               ),
                             ],
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.errorContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            "Out of Stock",
+                            style: TextStyle(
+                              color: colorScheme.onErrorContainer,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                     ],
@@ -552,12 +734,45 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    _currentProduct.description,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      height: 1.6,
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final description = _currentProduct.description;
+                      const int characterLimit = 150;
+                      final isLongDescription = description.length > characterLimit;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _isDescriptionExpanded || !isLongDescription
+                                ? description
+                                : '${description.substring(0, characterLimit)}...',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              height: 1.6,
+                            ),
+                          ),
+                          if (isLongDescription)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _isDescriptionExpanded = !_isDescriptionExpanded;
+                                  });
+                                },
+                                child: Text(
+                                  _isDescriptionExpanded ? "Read Less" : "Read More",
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 40),
@@ -571,7 +786,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           child: OutlinedButton(
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color: _currentProduct.stock > 0
+                                color: _getMaxStock() > 0
                                     ? colorScheme.primary
                                     : colorScheme.outline,
                               ),
@@ -579,12 +794,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                             ),
-                            onPressed: _currentProduct.stock > 0
+                            onPressed: _getMaxStock() > 0
                                 ? () {
                                     Provider.of<CartProvider>(
                                       context,
                                       listen: false,
-                                    ).addItem(_currentProduct, _quantity);
+                                    ).addItem(
+                                      _currentProduct,
+                                      _quantity,
+                                      _selectedUnit,
+                                    );
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(AppStrings.addedToCart),
@@ -597,7 +816,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: _currentProduct.stock > 0
+                                color: _getMaxStock() > 0
                                     ? colorScheme.primary
                                     : colorScheme.outline,
                               ),
@@ -611,10 +830,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           height: 54,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: _currentProduct.stock > 0
+                              backgroundColor: _getMaxStock() > 0
                                   ? colorScheme.primary
                                   : colorScheme.surfaceContainerHighest,
-                              foregroundColor: _currentProduct.stock > 0
+                              foregroundColor: _getMaxStock() > 0
                                   ? colorScheme.onPrimary
                                   : colorScheme.onSurfaceVariant,
                               elevation: 0,
@@ -622,9 +841,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                             ),
-                            onPressed: _currentProduct.stock > 0
-                                ? _buyNow
-                                : null,
+                            onPressed: _getMaxStock() > 0 ? _buyNow : null,
                             child: const Text(
                               "Buy Now",
                               style: TextStyle(

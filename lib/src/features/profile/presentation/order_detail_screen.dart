@@ -239,6 +239,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           _buildHeaderCard(context, order, isDark),
           gapH24,
 
+          // Loyalty Redemption Info
+          if (order.loyaltyPointsUsed > 0) ...[
+            _buildLoyaltyCard(context, order, isDark),
+            gapH24,
+          ],
+
           // Order Tracker
           if (order.status.toLowerCase() != 'cancelled') ...[
             _buildTrackerCard(context, order, isDark),
@@ -453,7 +459,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Total',
+                order.loyaltyPointsUsed > 0 ? 'Paid' : 'Total',
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: contentColor,
                   fontWeight: FontWeight.w600,
@@ -468,6 +474,103 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               fontWeight: FontWeight.bold,
               color: contentColor,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoyaltyCard(BuildContext context, dynamic order, bool isDark) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.p20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark 
+            ? [Colors.amber.shade900.withOpacity(0.3), Colors.amber.shade800.withOpacity(0.1)]
+            : [Colors.amber.shade50, Colors.amber.shade100],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.amber.withOpacity(0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.amber.withOpacity(isDark ? 0.1 : 0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.amber,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.stars, color: Colors.white, size: 20),
+              ),
+              gapW12,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Loyalty Points Used',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.amber.shade200 : Colors.amber.shade900,
+                      ),
+                    ),
+                    Text(
+                      'Points redeemed for this order',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: isDark ? Colors.amber.shade100.withOpacity(0.7) : Colors.amber.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '- ${order.loyaltyPointsUsed}',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: isDark ? Colors.amber.shade200 : Colors.amber.shade900,
+                ),
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(color: Colors.amber, thickness: 0.5),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Discount Amount',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.amber.shade100 : Colors.amber.shade900,
+                ),
+              ),
+              Text(
+                'PKR ${order.loyaltyDiscountAmount.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.amber.shade100 : Colors.amber.shade900,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -963,6 +1066,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     dynamic item,
     bool isDark,
   ) {
+    // DEBUG: Log what the UI sees
+    // ignore: avoid_print
+    print('DEBUG: UI Rendering Item - Name: ${item.productName}, Unit: "${item.unitType}"');
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -1070,6 +1177,27 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           fontWeight: FontWeight.bold,
                           color: colorScheme.primary,
                           fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.secondaryContainer,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: colorScheme.secondary.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        item.unitType ?? 'Unit',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSecondaryContainer,
+                          fontSize: 10,
                         ),
                       ),
                     ),

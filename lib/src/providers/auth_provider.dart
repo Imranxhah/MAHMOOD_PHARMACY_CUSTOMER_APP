@@ -287,6 +287,13 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> reloadUserProfile() async {
+    final accessToken = await _storageService.read('access');
+    if (accessToken != null) {
+      await _loadUser(accessToken);
+    }
+  }
+
   Future<void> _loadUser(String token) async {
     try {
       Map<String, dynamic> payload = Jwt.parseJwt(token);

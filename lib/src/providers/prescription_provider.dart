@@ -21,6 +21,7 @@ class PrescriptionProvider with ChangeNotifier {
     required String contactNumber,
     required int branchId,
     required String address,
+    String? note,
   }) async {
     _isLoading = true;
     _error = null;
@@ -32,6 +33,7 @@ class PrescriptionProvider with ChangeNotifier {
         contactNumber: contactNumber,
         branchId: branchId,
         address: address,
+        note: note,
       );
       if (response.statusCode == 201) {
         _prescriptions.insert(0, PrescriptionModel.fromJson(response.data));

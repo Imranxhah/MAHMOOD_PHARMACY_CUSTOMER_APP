@@ -299,6 +299,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
     // Build product name display
     String productNameDisplay = firstItem?.productName ?? "Order #${order.id}";
+    if (firstItem != null && firstItem.unitType != null) {
+      productNameDisplay += " (${firstItem.unitType})";
+    }
 
     // Extract date from createdAt
     String orderDate = order.createdAt.split(' ')[0];

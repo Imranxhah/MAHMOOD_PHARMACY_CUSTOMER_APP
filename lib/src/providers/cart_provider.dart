@@ -6,17 +6,36 @@ import 'package:customer_app/src/models/product_model.dart';
 
 class CartProvider with ChangeNotifier {
   final ApiClient _apiClient = ApiClient(); // ApiClient instance
-  final Map<int, CartItemModel> _items = {};
+  final Map<String, CartItemModel> _items = {};
   double _deliveryFee = 0.0; // Delivery Fee
 
-  Map<int, CartItemModel> get items => {..._items}; // Return a copy
+  Map<String, CartItemModel> get items => {..._items}; // Return a copy
   int get itemCount => _items.length;
   double get deliveryFee => _deliveryFee; // Delivery Fee Getter
+
+  String _generateKey(int productId, String unitType) {
+    return '${productId}_$unitType';
+  }
 
   double get totalAmount {
     double total = 0.0;
     _items.forEach((key, cartItem) {
-      total += double.parse(cartItem.product.price) * cartItem.quantity;
+      double price = 0.0;
+      switch (cartItem.unitType) {
+        case 'Pack':
+          price = double.tryParse(cartItem.product.packPrice ?? '0') ?? 0.0;
+          break;
+        case 'Single':
+          // Priority: pricePerPiece -> stripPrice -> base price (as fallback)
+          price = double.tryParse(cartItem.product.pricePerPiece ?? '') ?? 
+                  double.tryParse(cartItem.product.stripPrice ?? '') ?? 
+                  double.tryParse(cartItem.product.price) ?? 0.0;
+          break;
+        case 'Default':
+        default:
+          price = double.tryParse(cartItem.product.price) ?? 0.0;
+      }
+      total += price * cartItem.quantity;
     });
     return total;
   }
@@ -35,39 +54,44 @@ class CartProvider with ChangeNotifier {
     }
   }
 
-  void addItem(ProductModel product, [int quantity = 1]) {
-    if (_items.containsKey(product.id)) {
+  void addItem(ProductModel product, [int quantity = 1, String unitType = 'Default']) {
+    final key = _generateKey(product.id, unitType);
+    if (_items.containsKey(key)) {
       _items.update(
-        product.id,
+        key,
         (existingItem) => CartItemModel(
           product: existingItem.product,
           quantity: existingItem.quantity + quantity,
+          unitType: unitType,
         ),
       );
     } else {
       _items.putIfAbsent(
-        product.id,
-        () => CartItemModel(product: product, quantity: quantity),
+        key,
+        () => CartItemModel(product: product, quantity: quantity, unitType: unitType),
       );
     }
     notifyListeners();
   }
 
-  void removeItem(int productId) {
-    _items.remove(productId);
+  void removeItem(int productId, [String unitType = 'Default']) {
+    final key = _generateKey(productId, unitType);
+    _items.remove(key);
     notifyListeners();
   }
 
-  void updateItemQuantity(int productId, int newQuantity) {
-    if (_items.containsKey(productId)) {
+  void updateItemQuantity(int productId, int newQuantity, [String unitType = 'Default']) {
+    final key = _generateKey(productId, unitType);
+    if (_items.containsKey(key)) {
       if (newQuantity <= 0) {
-        _items.remove(productId);
+        _items.remove(key);
       } else {
         _items.update(
-          productId,
+          key,
           (existingItem) => CartItemModel(
             product: existingItem.product,
             quantity: newQuantity,
+            unitType: unitType,
           ),
         );
       }

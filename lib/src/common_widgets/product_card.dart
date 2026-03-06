@@ -370,7 +370,7 @@ class _ProductCardState extends State<ProductCard>
                             Consumer<CartProvider>(
                               builder: (context, cart, _) {
                                 final isInCart = cart.items.containsKey(
-                                  widget.product.id,
+                                  '${widget.product.id}_Default',
                                 );
 
                                 return Container(
@@ -421,9 +421,10 @@ class _ProductCardState extends State<ProductCard>
                                               if (isInCart) {
                                                 cart.removeItem(
                                                   widget.product.id,
+                                                  'Default',
                                                 );
                                               } else {
-                                                cart.addItem(widget.product);
+                                                cart.addItem(widget.product, 1, 'Default');
                                               }
                                             },
                                       child: Padding(

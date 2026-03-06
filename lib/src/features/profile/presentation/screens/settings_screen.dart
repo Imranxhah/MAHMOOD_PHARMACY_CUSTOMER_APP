@@ -39,204 +39,212 @@ class SettingsScreen extends StatelessWidget {
       ),
       body: (isAuthenticated && user == null)
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Column(
-                children: [
-                  // Profile Header Card (Only if authenticated)
-                  if (isAuthenticated && user != null)
-                    _buildProfileHeader(context, user, theme),
+          : RefreshIndicator(
+              onRefresh: () async {
+                if (isAuthenticated) {
+                  await authProvider.reloadUserProfile();
+                }
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  children: [
+                    // Profile Header Card (Only if authenticated)
+                    if (isAuthenticated && user != null)
+                      _buildProfileHeader(context, user, theme),
 
-                  const SizedBox(height: AppSizes.p16),
+                    const SizedBox(height: AppSizes.p16),
 
-                  // Account Section
-                  _buildSectionTitle(context, "Account", theme),
-                  _buildMenuCard(context, theme, [
-                    if (isAuthenticated) ...[
-                      _MenuItem(
-                        icon: Icons.edit_outlined,
-                        title: AppStrings.editProfile,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const EditProfileScreen(),
+                    // Account Section
+                    _buildSectionTitle(context, "Account", theme),
+                    _buildMenuCard(context, theme, [
+                      if (isAuthenticated) ...[
+                        _MenuItem(
+                          icon: Icons.edit_outlined,
+                          title: AppStrings.editProfile,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const EditProfileScreen(),
+                            ),
                           ),
                         ),
-                      ),
-                      _MenuItem(
-                        icon: Icons.history,
-                        title: AppStrings.orderHistory,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const OrderHistoryScreen(),
+                        _MenuItem(
+                          icon: Icons.history,
+                          title: AppStrings.orderHistory,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const OrderHistoryScreen(),
+                            ),
                           ),
                         ),
-                      ),
-                      _MenuItem(
-                        icon: Icons.favorite_outline,
-                        title: AppStrings.favorites,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const WishlistScreen(),
+                        _MenuItem(
+                          icon: Icons.favorite_outline,
+                          title: AppStrings.favorites,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const WishlistScreen(),
+                            ),
                           ),
                         ),
-                      ),
-                      _MenuItem(
-                        icon: Icons.receipt_long_outlined,
-                        title: AppStrings.myPrescriptions,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const MyPrescriptionsScreen(),
+                        _MenuItem(
+                          icon: Icons.receipt_long_outlined,
+                          title: AppStrings.myPrescriptions,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MyPrescriptionsScreen(),
+                            ),
                           ),
                         ),
-                      ),
-                      _MenuItem(
-                        icon: Icons.location_on_outlined,
-                        title: "My Addresses",
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const AddressListScreen(),
+                        _MenuItem(
+                          icon: Icons.location_on_outlined,
+                          title: "My Addresses",
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AddressListScreen(),
+                            ),
                           ),
                         ),
-                      ),
-                      _MenuItem(
-                        icon: Icons.lock_outline,
-                        title: "Change Password",
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ChangePasswordScreen(),
+                        _MenuItem(
+                          icon: Icons.lock_outline,
+                          title: "Change Password",
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ChangePasswordScreen(),
+                            ),
                           ),
                         ),
-                      ),
-                    ] else ...[
-                      _MenuItem(
-                        icon: Icons.login,
-                        title: "Login",
-                        onTap: () => Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                            builder: (_) => const WelcomeScreen(),
+                      ] else ...[
+                        _MenuItem(
+                          icon: Icons.login,
+                          title: "Login",
+                          onTap: () => Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (_) => const WelcomeScreen(),
+                            ),
+                            (route) => false,
                           ),
-                          (route) => false,
                         ),
-                      ),
-                    ],
-                  ]),
+                      ],
+                    ]),
 
-                  const SizedBox(height: AppSizes.p16),
+                    const SizedBox(height: AppSizes.p16),
 
-                  // General Section
-                  _buildSectionTitle(context, "General", theme),
-                  _buildMenuCard(context, theme, [
-                    _MenuItem(
-                      icon: Icons.store_outlined,
-                      title: AppStrings.ourBranches,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const BranchesScreen(),
-                        ),
-                      ),
-                    ),
-                  ]),
-
-                  const SizedBox(height: AppSizes.p16),
-
-                  // Legal & Support Section
-                  _buildSectionTitle(context, "Legal & Support", theme),
-                  _buildMenuCard(context, theme, [
-                    _MenuItem(
-                      icon: Icons.privacy_tip_outlined,
-                      title: "Privacy Policy",
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const WebViewScreen(
-                            title: "Privacy Policy",
-                            url:
-                                "https://mahmoodpharmacy.com.pk/privacy-policy/",
-                          ),
-                        ),
-                      ),
-                    ),
-                    _MenuItem(
-                      icon: Icons.description_outlined,
-                      title: "Terms of Service",
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const WebViewScreen(
-                            title: "Terms of Service",
-                            url:
-                                "https://mahmoodpharmacy.com.pk/terms-of-service/",
-                          ),
-                        ),
-                      ),
-                    ),
-                    _MenuItem(
-                      icon: Icons.warning_amber_rounded,
-                      title: "Disclaimer",
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const WebViewScreen(
-                            title: "Disclaimer",
-                            url: "https://mahmoodpharmacy.com.pk/disclaimer/",
-                          ),
-                        ),
-                      ),
-                    ),
-                    _MenuItem(
-                      icon: Icons.support_agent_rounded,
-                      title: "Contact Us",
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const WebViewScreen(
-                            title: "Contact Us",
-                            url:
-                                "https://mahmoodpharmacy.com.pk/complaint-form/",
-                          ),
-                        ),
-                      ),
-                    ),
-                  ]),
-
-                  const SizedBox(height: AppSizes.p16),
-
-                  // Admin Section (if admin and authenticated)
-                  if (isAuthenticated && authProvider.isAdmin) ...[
-                    _buildSectionTitle(context, "Admin", theme),
+                    // General Section
+                    _buildSectionTitle(context, "General", theme),
                     _buildMenuCard(context, theme, [
                       _MenuItem(
-                        icon: Icons.people_outline,
-                        title: AppStrings.viewAllUsers,
+                        icon: Icons.store_outlined,
+                        title: AppStrings.ourBranches,
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const UserListScreen(),
+                            builder: (_) => const BranchesScreen(),
                           ),
                         ),
                       ),
                     ]),
+
                     const SizedBox(height: AppSizes.p16),
+
+                    // Legal & Support Section
+                    _buildSectionTitle(context, "Legal & Support", theme),
+                    _buildMenuCard(context, theme, [
+                      _MenuItem(
+                        icon: Icons.privacy_tip_outlined,
+                        title: "Privacy Policy",
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const WebViewScreen(
+                              title: "Privacy Policy",
+                              url:
+                                  "https://mahmoodpharmacy.com.pk/privacy-policy/",
+                            ),
+                          ),
+                        ),
+                      ),
+                      _MenuItem(
+                        icon: Icons.description_outlined,
+                        title: "Terms of Service",
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const WebViewScreen(
+                              title: "Terms of Service",
+                              url:
+                                  "https://mahmoodpharmacy.com.pk/terms-of-service/",
+                            ),
+                          ),
+                        ),
+                      ),
+                      _MenuItem(
+                        icon: Icons.warning_amber_rounded,
+                        title: "Disclaimer",
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const WebViewScreen(
+                              title: "Disclaimer",
+                              url: "https://mahmoodpharmacy.com.pk/disclaimer/",
+                            ),
+                          ),
+                        ),
+                      ),
+                      _MenuItem(
+                        icon: Icons.support_agent_rounded,
+                        title: "Contact Us",
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const WebViewScreen(
+                              title: "Contact Us",
+                              url:
+                                  "https://mahmoodpharmacy.com.pk/complaint-form/",
+                            ),
+                          ),
+                        ),
+                      ),
+                    ]),
+
+                    const SizedBox(height: AppSizes.p16),
+
+                    // Admin Section (if admin and authenticated)
+                    if (isAuthenticated && authProvider.isAdmin) ...[
+                      _buildSectionTitle(context, "Admin", theme),
+                      _buildMenuCard(context, theme, [
+                        _MenuItem(
+                          icon: Icons.people_outline,
+                          title: AppStrings.viewAllUsers,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const UserListScreen(),
+                            ),
+                          ),
+                        ),
+                      ]),
+                      const SizedBox(height: AppSizes.p16),
+                    ],
+
+                    // Preferences Section
+                    _buildSectionTitle(context, "Preferences", theme),
+                    _buildThemeCard(context, theme),
+
+                    const SizedBox(height: AppSizes.p24),
+
+                    // Logout Button (Only if authenticated)
+                    if (isAuthenticated) ...[
+                      _buildLogoutButton(context, authProvider, theme),
+                      const SizedBox(height: AppSizes.p32),
+                    ],
                   ],
-
-                  // Preferences Section
-                  _buildSectionTitle(context, "Preferences", theme),
-                  _buildThemeCard(context, theme),
-
-                  const SizedBox(height: AppSizes.p24),
-
-                  // Logout Button (Only if authenticated)
-                  if (isAuthenticated) ...[
-                    _buildLogoutButton(context, authProvider, theme),
-                    const SizedBox(height: AppSizes.p32),
-                  ],
-                ],
+                ),
               ),
             ),
     );
@@ -401,7 +409,6 @@ class SettingsScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: AppSizes.p12), // Reduced from p16
-
                   // User name with verified badge
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -409,7 +416,8 @@ class SettingsScreen extends StatelessWidget {
                       Flexible(
                         child: Text(
                           '${user.firstName} ${user.lastName}',
-                          style: theme.textTheme.titleLarge?.copyWith( // Changed to titleLarge for slightly smaller text
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            // Changed to titleLarge for slightly smaller text
                             color: theme.colorScheme.onPrimary,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Poppins',
@@ -436,7 +444,6 @@ class SettingsScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: AppSizes.p8), // Reduced from p12
-
                   // Contact info cards
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -510,6 +517,37 @@ class SettingsScreen extends StatelessWidget {
                                   0.95,
                                 ),
                                 fontWeight: FontWeight.w500,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: AppSizes.p8),
+
+                        // Divider
+                        Container(
+                          height: 1,
+                          color: theme.colorScheme.onPrimary.withOpacity(0.2),
+                        ),
+
+                        const SizedBox(height: AppSizes.p8),
+
+                        // Loyalty Points
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.stars_rounded,
+                              size: 18,
+                              color: Colors.amber.shade300,
+                            ),
+                            const SizedBox(width: AppSizes.p8),
+                            Text(
+                              '${user.loyaltyPoints} Loyalty Points',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
                                 fontFamily: 'Poppins',
                               ),
                             ),

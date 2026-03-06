@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Import for FilteringTextInputFormatter
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
+import 'package:customer_app/src/providers/auth_provider.dart'; // Import AuthProvider
 import 'package:customer_app/src/providers/order_provider.dart';
 import 'package:customer_app/src/providers/cart_provider.dart';
 import 'package:customer_app/src/providers/branch_provider.dart';
 import 'package:customer_app/src/providers/address_provider.dart'; // Import AddressProvider
+import 'package:customer_app/src/services/location_service.dart'; // Import LocationService
 import 'package:customer_app/src/features/profile/presentation/screens/address_list_screen.dart'; // Import AddressListScreen
 import 'package:customer_app/src/models/branch_model.dart';
 import 'package:customer_app/src/models/address_model.dart'; // Import AddressModel
@@ -42,6 +44,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   AddressModel? _selectedAddress; // For address dropdown
   bool _isValidatingCart = true;
   bool _isPlacingOrder = false;
+  bool _isAutoFetchingAddress = false;
+  bool _useLoyaltyPoints = false; // Add this
   String? _cartValidationErrorMessage;
 
   @override
@@ -51,17 +55,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       _selectedOrderType = "Quick";
     }
     
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       _validateCartItems();
+      _fetchCurrentLocationAddress();
       Provider.of<BranchProvider>(context, listen: false).fetchLocationAndData();
       Provider.of<AddressProvider>(
         context,
         listen: false,
       ).fetchAddresses(); // Fetch addresses
-      Provider.of<CartProvider>(
+      
+      final cartProvider = Provider.of<CartProvider>(
         context,
         listen: false,
-      ).fetchDeliveryCharges(); // Fetch delivery charges
+      );
+      await cartProvider.fetchDeliveryCharges(); // Fetch delivery charges
+      
+      if (mounted) {
+         final deliveryFee = cartProvider.deliveryFee;
+         final total = widget.cartTotal + deliveryFee;
+         Provider.of<OrderProvider>(context, listen: false).validateMinimumOrderAmount(total);
+      }
     });
   }
 
@@ -70,6 +83,38 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _shippingAddressController.dispose();
     _contactNumberController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchCurrentLocationAddress() async {
+    setState(() {
+      _isAutoFetchingAddress = true;
+    });
+
+    try {
+      final branchProvider = Provider.of<BranchProvider>(context, listen: false);
+      await branchProvider.fetchLocationAndData();
+      
+      if (branchProvider.currentPosition != null) {
+        final address = await LocationService.getAddressFromLatLng(
+          branchProvider.currentPosition!.latitude,
+          branchProvider.currentPosition!.longitude,
+        );
+        
+        if (address != null && mounted) {
+          setState(() {
+            _shippingAddressController.text = address;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Error auto-fetching address: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAutoFetchingAddress = false;
+        });
+      }
+    }
   }
 
   Future<void> _validateCartItems() async {
@@ -118,6 +163,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
+    // Check validation one last time (though UI shouldn't allow this)
+    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+    if (!orderProvider.isAmountValid) {
+       _showErrorDialog("Invalid Amount", orderProvider.amountValidationError ?? "Order amount is invalid.");
+       return;
+    }
+
     if (_shippingAddressController.text.isEmpty ||
         _contactNumberController.text.isEmpty) {
       _showErrorDialog(
@@ -137,7 +189,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
     const paymentMethod = "COD";
 
@@ -154,6 +205,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         branchId: _selectedBranch?.id,
         paymentMethod: paymentMethod,
         orderType: _selectedOrderType, // Keep this for now, it's just a string in payload
+        useLoyaltyPoints: _useLoyaltyPoints, // Pass loyalty points flag
       );
 
       if (!mounted) return;
@@ -161,6 +213,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (!widget.isBuyNow) {
         cartProvider
             .clearCart(); // Clear cart after successful order only if not Buy Now
+      }
+
+      // Reload user profile to update loyalty points balance
+      if (mounted) {
+        await Provider.of<AuthProvider>(context, listen: false).reloadUserProfile();
       }
 
       Navigator.of(
@@ -364,11 +421,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   const SizedBox(height: AppSizes.p24),
 
                   // Address Section
-                  Text(
-                    "Enter your shipping address",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Enter your shipping address",
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (_isAutoFetchingAddress)
+                        const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      else
+                        IconButton(
+                          icon: const Icon(Icons.my_location, size: 20),
+                          onPressed: _fetchCurrentLocationAddress,
+                          tooltip: "Use Current Location",
+                        ),
+                    ],
                   ),
                   const SizedBox(height: AppSizes.p12),
                   CustomTextField(
@@ -422,12 +496,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                       // If we have branches (either nearest or fallback), show the dropdown
                       if (branchProvider.foundBranches.isNotEmpty) {
+                        // Ensure _selectedBranch is either null or exists in the current foundBranches list
+                        // Using .contains now works because of operator == in BranchModel
+                        if (_selectedBranch != null && !branchProvider.foundBranches.contains(_selectedBranch)) {
+                           _selectedBranch = null;
+                        }
+
                         // Auto-select the first branch if none is selected
                         if (_selectedBranch == null) {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
-                            setState(() {
-                              _selectedBranch = branchProvider.foundBranches.first;
-                            });
+                            if (mounted && branchProvider.foundBranches.isNotEmpty) {
+                              setState(() {
+                                _selectedBranch = branchProvider.foundBranches.first;
+                              });
+                            }
                           });
                         }
 
@@ -494,6 +576,52 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   const SizedBox(height: AppSizes.p24),
 
+                  // Loyalty Points Section
+                  Consumer<AuthProvider>(
+                    builder: (context, authProvider, child) {
+                      final points = authProvider.user?.loyaltyPoints ?? 0;
+                      
+                      if (points < 500) {
+                        return const SizedBox.shrink();
+                      }
+                      
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Loyalty Points",
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: AppSizes.p12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: AppSizes.p4),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(AppSizes.radius12),
+                              border: Border.all(color: Theme.of(context).dividerColor),
+                            ),
+                            child: CheckboxListTile(
+                              title: Text("Use Loyalty Points (Available: $points)"),
+                              subtitle: const Text("1 Point = 1 PKR", style: TextStyle(fontSize: 12)),
+                              value: _useLoyaltyPoints,
+                              onChanged: (value) {
+                                setState(() {
+                                  _useLoyaltyPoints = value ?? false;
+                                });
+                              },
+                              secondary: const Icon(Icons.stars, color: Colors.amber),
+                              activeColor: Theme.of(context).colorScheme.primary,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: AppSizes.p8),
+                            ),
+                          ),
+                          const SizedBox(height: AppSizes.p24),
+                        ],
+                      );
+                    },
+                  ),
+
                   // Payment Method
                   Text(
                     AppStrings.paymentMethod,
@@ -539,51 +667,110 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(AppSizes.radius12),
                     ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Consumer<AuthProvider>(
+                      builder: (context, authProvider, child) {
+                        final subtotal = widget.cartTotal;
+                        final total = subtotal + deliveryFee;
+                        double discount = 0.0;
+                        
+                        if (_useLoyaltyPoints) {
+                          final points = authProvider.user?.loyaltyPoints ?? 0;
+                          discount = points.toDouble();
+                          if (discount > total) {
+                            discount = total;
+                          }
+                        }
+                        
+                        final finalTotal = total - discount;
+
+                        return Column(
                           children: [
-                            Text(AppStrings.subtotal),
-                            Text("PKR ${widget.cartTotal.toStringAsFixed(2)}"),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(AppStrings.deliveryFee),
-                            Text("PKR ${deliveryFee.toStringAsFixed(2)}"),
-                          ],
-                        ),
-                        const Divider(height: 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              AppStrings.total,
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(AppStrings.subtotal),
+                                Text("PKR ${subtotal.toStringAsFixed(2)}"),
+                              ],
                             ),
-                            Text(
-                              "PKR ${(widget.cartTotal + deliveryFee).toStringAsFixed(2)}",
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                  ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(AppStrings.deliveryFee),
+                                Text("PKR ${deliveryFee.toStringAsFixed(2)}"),
+                              ],
+                            ),
+                            if (_useLoyaltyPoints && discount > 0) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text("Loyalty Discount", style: TextStyle(color: Colors.green)),
+                                  Text("- PKR ${discount.toStringAsFixed(2)}", style: const TextStyle(color: Colors.green)),
+                                ],
+                              ),
+                            ],
+                            const Divider(height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  AppStrings.total,
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  "PKR ${finalTotal.toStringAsFixed(2)}",
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      ),
+                                ),
+                              ],
                             ),
                           ],
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: AppSizes.p32),
-                  CustomButton(
-                    text: AppStrings.placeOrder,
-                    onPressed: _placeOrder,
+                  Consumer<OrderProvider>(
+                    builder: (context, orderProvider, child) {
+                      if (orderProvider.isValidatingAmount) {
+                         return const Center(child: CircularProgressIndicator());
+                      }
+                      
+                      if (orderProvider.amountValidationError != null) {
+                        return Container(
+                          padding: const EdgeInsets.all(AppSizes.p12),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(AppSizes.radius8),
+                            border: Border.all(color: Colors.red.withOpacity(0.5)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.error_outline, color: Colors.red),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  orderProvider.amountValidationError!,
+                                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      
+                      return CustomButton(
+                        text: AppStrings.placeOrder,
+                        onPressed: _placeOrder,
+                      );
+                    },
                   ),
                 ],
               ),

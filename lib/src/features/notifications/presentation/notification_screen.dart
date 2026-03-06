@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:customer_app/src/providers/notification_provider.dart';
+import 'package:customer_app/src/models/notification_model.dart';
+import 'package:customer_app/src/features/profile/presentation/order_detail_screen.dart';
+// import 'package:customer_app/src/features/products/presentation/product_detail_screen.dart'; // Uncomment if needed and import ProductModel
+
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -30,16 +34,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
-          Provider.of<NotificationProvider>(context, listen: false).markAllRead();
-        }
-      },
-      child: Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        appBar: AppBar(
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 1,
         title: const Text(
@@ -55,11 +52,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               if (unreadCount > 0) {
                 return TextButton.icon(
                   onPressed: () {
-                    for (var notification in provider.notifications) {
-                      if (!notification.isRead) {
-                        provider.markAsRead(notification.id);
-                      }
-                    }
+                    provider.markAllRead();
                   },
                   icon: const Icon(Icons.done_all, size: 18),
                   label: const Text("Mark all read"),
@@ -259,6 +252,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           if (!isRead) {
                             provider.markAsRead(notification.id);
                           }
+                          _handleNavigation(context, notification);
                         },
                         child: Padding(
                           padding: const EdgeInsets.all(16),
@@ -382,7 +376,36 @@ class _NotificationScreenState extends State<NotificationScreen> {
           );
         },
       ),
-    ));
+    );
+  }
+
+  void _handleNavigation(BuildContext context, NotificationModel notification) {
+    final data = notification.data;
+    if (data == null) return;
+
+    // Handle Order Navigation
+    // Checks for 'order_id' or 'id' if type is 'order'
+    if (data.containsKey('order_id')) {
+      final orderId = int.tryParse(data['order_id'].toString());
+      if (orderId != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OrderDetailScreen(orderId: orderId),
+          ),
+        );
+      }
+    } else if (data['type'] == 'order' && data.containsKey('id')) {
+       final orderId = int.tryParse(data['id'].toString());
+      if (orderId != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OrderDetailScreen(orderId: orderId),
+          ),
+        );
+      }
+    }
   }
 
   String _formatDate(DateTime date) {

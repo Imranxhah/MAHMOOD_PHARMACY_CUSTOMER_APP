@@ -12,6 +12,12 @@ class ProductModel {
   final String? image;
   final bool isActive;
   bool isFavorite;
+  final int? stripsInPack;
+  final int? tabletsInStrip;
+  final String? packPrice;
+  final String? stripPrice;
+  final String? pricePerPiece; // Added this
+  final String? manufacturer;
 
   ProductModel({
     required this.id,
@@ -25,6 +31,12 @@ class ProductModel {
     this.image,
     required this.isActive,
     required this.isFavorite,
+    this.stripsInPack,
+    this.tabletsInStrip,
+    this.packPrice,
+    this.stripPrice,
+    this.pricePerPiece, // Added this
+    this.manufacturer,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -49,6 +61,12 @@ class ProductModel {
       image: imageUrl,
       isActive: json['is_active'] ?? true,
       isFavorite: json['is_favorite'] ?? false,
+      stripsInPack: json['strips_in_pack'],
+      tabletsInStrip: json['tablets_in_strip'],
+      packPrice: json['pack_price']?.toString(),
+      stripPrice: json['strip_price']?.toString(),
+      pricePerPiece: json['price_per_piece']?.toString(), // Map this
+      manufacturer: json['manufacturer'],
     );
   }
 
@@ -65,6 +83,12 @@ class ProductModel {
       'image': image,
       'is_active': isActive,
       'is_favorite': isFavorite,
+      'strips_in_pack': stripsInPack,
+      'tablets_in_strip': tabletsInStrip,
+      'pack_price': packPrice,
+      'strip_price': stripPrice,
+      'price_per_piece': pricePerPiece, // Add this
+      'manufacturer': manufacturer,
     };
   }
 }
