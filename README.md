@@ -1,4 +1,8 @@
-![Mahmood Pharmacy — Flutter app and Django API](docs/assets/cover.jpg)
+<p align="center">
+  <img src="docs/screenshots/home-light.png" width="250" alt="Mahmood Pharmacy home screen in light mode">
+  <img src="docs/screenshots/catalog.png" width="250" alt="Mahmood Pharmacy product catalog">
+  <img src="docs/screenshots/home-dark.png" width="250" alt="Mahmood Pharmacy home screen in dark mode">
+</p>
 
 # Mahmood Pharmacy · Customer app
 
@@ -7,6 +11,14 @@ A Flutter storefront for browsing medicines, managing a cart, uploading prescrip
 **Flutter · Dart · Provider · Dio · Firebase Cloud Messaging**
 
 [Get started](docs/SETUP.md) · [Architecture](#how-it-fits-together) · [Backend](https://github.com/Imranxhah/MAHMOOD_PHARMACY_BACKEND) · [Contribute](CONTRIBUTING.md)
+
+## Product tour
+
+The app presents the catalog in light and dark themes, keeps branch discovery close to the main shopping flow, and uses a branded loading experience.
+
+| Branch finder | Branded startup |
+| --- | --- |
+| <img src="docs/screenshots/branches.png" width="320" alt="Nearby pharmacy branches"> | <img src="docs/screenshots/splash.png" width="320" alt="Mahmood Pharmacy splash screen"> |
 
 ## Explore the app
 
@@ -76,7 +88,7 @@ The API client adds bearer tokens and attempts a refresh after eligible authenti
 - The launcher-icon configuration refers to `assets/app_icon/icon.png`, while the checked-in asset is `ic_launcher.png`. Correct that path before regenerating icons.
 - Android release builds currently use debug signing. Configure release signing before distribution.
 
-See [setup and troubleshooting](docs/SETUP.md) for connection and Firebase issues. The cover is original illustrative artwork, not an application screenshot.
+See [setup and troubleshooting](docs/SETUP.md) for connection and Firebase issues. The product images above are screenshots from the supplied Android build.
 
 ## Contributing
 
